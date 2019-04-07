@@ -8,7 +8,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using static PiperPicker.Controllers.Mopidy;
+using PiperPicker.Proxies;
+using static PiperPicker.Controllers.MopidyController;
 
 namespace PiperPicker.Pages
 {
@@ -19,6 +20,11 @@ namespace PiperPicker.Pages
 
         public ControlModel()
         {
+            Task.Run(async () => {
+                Status = await MopidyProxy.GetCurrentTrack();
+            }).Wait();
         }
+
+        public MopidyProxy.CurrentTrackDto Status {get; set;}
     }
 }

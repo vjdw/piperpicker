@@ -10,14 +10,19 @@
         return Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken;
     }
 }
+@section Styles {
+    <link href="@Url.Content("~/css/radmac.css")" rel="stylesheet" type="text/css" />
+}
 
 <div class="row">
     <div class="col-md-3">
         <h2>Radcliffe & Maconie</h2>
         <ul class="episode-list">
             @foreach(var item in @Model.Episodes) {
-                <li class="episode-item" >@item.Name</li>
-                <button type="button" class="episode-play" onclick="play('@item.Uri')" >Play</button>
+                <div class="episode-item-container">
+                    <li class="episode-item" >@item.Name</li>
+                    <button type="button" class="episode-play" onclick="play('@item.Uri')" >Play</button>
+                </div>
             }
         </ul>
     </div>

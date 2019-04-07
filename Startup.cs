@@ -55,6 +55,7 @@ namespace PiperPicker
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
+            //app.UseMvc();
             app.UseMvc();
         }
     }

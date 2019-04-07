@@ -16,6 +16,9 @@
     <div class="col-md-3">
         <h2>Control</h2>
     </div>
+    <div class="status-container">
+        <span>@Model.Status.Name / @Model.Status.Comment</span>
+    </div>
     <div class="controls-container">
         <button type="button" class="episode-play" onclick="togglePlay()" >Play / Pause</button>
     </div>
@@ -27,7 +30,7 @@
 
         $.ajax({
                 type: "POST",
-                url: "MopidyProxy/?handler=TogglePlay",
+                url: "api/mopidy/togglepause",
                 headers:
                 {
                     "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
@@ -44,7 +47,7 @@
             }
 
             function errorFunc(data) {
-                alert(data);
+                console.log(data);
             }
     }
 </script>

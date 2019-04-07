@@ -9,7 +9,8 @@ using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PiperPicker.Controllers;
-using static PiperPicker.Controllers.Mopidy;
+using PiperPicker.Proxies;
+using static PiperPicker.Proxies.MopidyProxy;
 
 namespace PiperPicker.Pages
 {
@@ -20,7 +21,9 @@ namespace PiperPicker.Pages
 
         public RadMacModel()
         {
-            Episodes = Mopidy.GetEpisodes().GetAwaiter().GetResult();
+            Task.Run(async () => {
+                Episodes = (await MopidyProxy.GetEpisodes()).OrderByDescending(_ => _.Name);
+            }).Wait();
         }
 
         public IEnumerable<Episode> Episodes { get; set; }
