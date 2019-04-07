@@ -1,5 +1,5 @@
 ﻿@page
-@model IndexModel
+@model ControlModel
 @{
     ViewData["Title"] = "Home page";
 }
@@ -14,23 +14,20 @@
 
 <div class="row">
     <div class="col-md-3">
-        <h2>Radcliffe & Maconie</h2>
-        <ul class="episode-list">
-            @foreach(var item in @Model.Episodes) {
-                <li class="episode-item" >@item.Name</li>
-                <button type="button" class="episode-play" onclick="play('@item.Uri')" >Play</button>
-            }
-        </ul>
+        <h2>Control</h2>
+    </div>
+    <div class="controls-container">
+        <button type="button" class="episode-play" onclick="togglePlay()" >Play / Pause</button>
     </div>
 </div>
 
 <script>
-    function play(url) {
+    function togglePlay(url) {
         console.log('play ' + url)
 
         $.ajax({
                 type: "POST",
-                url: "/?handler=PlayEpisode",
+                url: "MopidyProxy/?handler=TogglePlay",
                 headers:
                 {
                     "RequestVerificationToken": '@GetAntiXsrfRequestToken()'

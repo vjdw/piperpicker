@@ -4,15 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
-namespace piperpicker.Pages
+namespace PiperPicker.Pages
 {
-    public class AboutModel : PageModel
+    public class SpotifyModel : PageModel
     {
         public string Message { get; set; }
 
         public void OnGet()
         {
-            Message = "Your application description page.";
+            Message = "spotify page.";
         }
     }
 }

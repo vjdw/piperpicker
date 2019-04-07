@@ -1,0 +1,53 @@
+﻿@page
+@model RadMacModel
+@{
+    ViewData["Title"] = "Home page";
+}
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken;
+    }
+}
+
+<div class="row">
+    <div class="col-md-3">
+        <h2>Radcliffe & Maconie</h2>
+        <ul class="episode-list">
+            @foreach(var item in @Model.Episodes) {
+                <li class="episode-item" >@item.Name</li>
+                <button type="button" class="episode-play" onclick="play('@item.Uri')" >Play</button>
+            }
+        </ul>
+    </div>
+</div>
+
+<script>
+    function play(url) {
+        console.log('play ' + url)
+
+        $.ajax({
+                type: "POST",
+                url: "api/mopidy/playepisode",
+                headers:
+                {
+                    "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
+                },
+                data: JSON.stringify({uri: url}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: successFunc,
+                error: errorFunc
+            });
+
+            function successFunc(data, status) {
+                alert('ok')
+            }
+
+            function errorFunc(data) {
+                console.log(data)
+                alert('error');
+            }
+    }
+</script>
