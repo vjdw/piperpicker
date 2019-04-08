@@ -1,0 +1,59 @@
+@page
+@model RadioModel
+@{
+    ViewData["Title"] = "Home page";
+}
+@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
+@functions{
+    public string GetAntiXsrfRequestToken()
+    {
+        return Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken;
+    }
+}
+@section Styles {
+}
+
+<div class="row">
+    <div>
+        <div class="title-container">
+            <h3>Radio</h3>
+        </div>
+        <ul class="episode-list">
+            @foreach(var item in @Model.Stations) {
+                <div class="episode-item-container">
+                    <img class="icon episode-play" src="/images/play.svg" onclick="play('@item.Uri')"/>
+                    <li class="episode-item" onclick="play('@item.Uri')">@item.Name</li>
+                </div>
+            }
+        </ul>
+    </div>
+</div>
+
+<script>
+    function play(url) {
+        console.log('play ' + url)
+
+        $.ajax({
+                type: "POST",
+                url: "api/mopidy/playepisode",
+                headers:
+                {
+                    "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
+                },
+                data: JSON.stringify({uri: url}),
+                contentType: "application/json; charset=utf-8",
+                dataType: "json",
+                success: successFunc,
+                error: errorFunc
+            });
+
+            function successFunc(data, status) {
+                alert('ok')
+            }
+
+            function errorFunc(data) {
+                console.log(data)
+                alert('error');
+            }
+    }
+</script>

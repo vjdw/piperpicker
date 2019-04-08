@@ -22,10 +22,17 @@ namespace PiperPicker.Pages
         public RadMacModel()
         {
             Task.Run(async () => {
-                Episodes = (await MopidyProxy.GetEpisodes()).OrderByDescending(_ => _.Name);
+                Episodes = (await MopidyProxy.GetEpisodes())
+                    .Where(_ => _.Name.StartsWith("RadMac"))
+                    .Select(_ => {
+                        var parts = _.Name.Split('_', 3);
+                        _.Name = $"{parts[1]} {parts[2].Replace(".m4a", "").Replace('_',' ')}";
+                        return _;
+                    })
+                    .OrderByDescending(_ => _.Name);
             }).Wait();
         }
 
-        public IEnumerable<Episode> Episodes { get; set; }
+        public IEnumerable<MopidyItem> Episodes { get; set; }
     }
 }

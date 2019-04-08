@@ -28,11 +28,11 @@ namespace PiperPicker.Proxies
             return mopidyResponse["result"].ToObject<CurrentTrackDto>();
         }
 
-        public static async Task<IList<Episode>> GetEpisodes()
+        public static async Task<IList<MopidyItem>> GetEpisodes()
         {
             var responseContent = await MopidyPost("core.library.browse", "file:///media/data/get-iplayer-downloads");
-            var episodeList = JsonConvert.DeserializeObject<EpisodeList>(responseContent);
-            return episodeList.Result;
+            var mopidyItems = JsonConvert.DeserializeObject<MopidyItems>(responseContent);
+            return mopidyItems.Result;
         }
 
         public static async Task PlayEpisode(string episodeUri)
@@ -52,16 +52,18 @@ namespace PiperPicker.Proxies
             await MopidyPost("core.playback.play");
         }
 
-        public static async Task TogglePause()
+        public static async Task<string> TogglePause()
         {
             var state = await GetState();
             if (state.Result == "playing")
             {
                 await MopidyPost("core.playback.pause");
+                return "paused";
             }
             else
             {
                 await MopidyPost("core.playback.play");
+                return "playing";
             }
         }
 
@@ -73,7 +75,7 @@ namespace PiperPicker.Proxies
         }
 
         [JsonObject]
-        public class PlayEpisodeDto
+        public class PlayMopidyItemDto
         {
             [JsonProperty]
             public string Uri {get; set;}
@@ -106,11 +108,11 @@ namespace PiperPicker.Proxies
             public string Date {get; set;}
         }
 
-        public class EpisodeList
+        public class MopidyItems
         {
-            public IList<Episode> Result {get; set;}
+            public IList<MopidyItem> Result {get; set;}
         }
-        public class Episode
+        public class MopidyItem
         {
             public string Name {get; set;}
             public string Uri {get; set;}

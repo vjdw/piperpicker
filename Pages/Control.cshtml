@@ -11,22 +11,46 @@
         return Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken;
     }
 }
+@section Styles {
+    <link href="@Url.Content("~/css/control.css")" rel="stylesheet" type="text/css" />
+}
+@section Scripts {
+    <script>
+        $.ajax({
+            type: "GET",
+            url: "api/mopidy/playstate",
+            headers:
+            {
+                "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
+            },
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: (playstate) => {
+                reportPlayState(playstate.state);
+            },
+            error: (errorResponse) => {
+                reportPlayState('error');
+            }
+        });
+    </script>
+}
 
 <div class="row">
-    <div class="col-md-3">
-        <h2>Control</h2>
+    <div class="title-container">
+        <h3>Control</h3>
     </div>
     <div class="status-container">
-        <span>@Model.Status.Name / @Model.Status.Comment</span>
+        <p>@Model.Status.Name / @Model.Status.Comment</p>
+        <p id="playState"></p>
     </div>
     <div class="controls-container">
-        <button type="button" class="episode-play" onclick="togglePlay()" >Play / Pause</button>
+        <img class="icon" src="/images/play-pause.svg" onclick="togglePlay()"/>
     </div>
 </div>
 
 <script>
-    function togglePlay(url) {
-        console.log('play ' + url)
+    function togglePlay() {
+        reportPlayState("submitted");
 
         $.ajax({
                 type: "POST",
@@ -35,19 +59,18 @@
                 {
                     "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
                 },
-                data: JSON.stringify({uri: url}),
                 contentType: "application/json; charset=utf-8",
                 dataType: "json",
-                success: successFunc,
-                error: errorFunc
+                success: (toggleResult) => {reportPlayState(toggleResult.state);},
+                error: (errorResponse) => {
+                    reportPlayState('error');
+                }
             });
-
-            function successFunc(data, status) {
-                
-            }
-
-            function errorFunc(data) {
-                console.log(data);
-            }
     }
+
+    function reportPlayState(playState) {
+        var element = document.getElementById('playState');
+        element.innerText = playState;
+    }
+
 </script>

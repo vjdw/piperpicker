@@ -15,10 +15,11 @@
               asp-fallback-test-class="sr-only" asp-fallback-test-property="position" asp-fallback-test-value="absolute" />
         <link rel="stylesheet" href="~/css/site.min.css" asp-append-version="true" />
     </environment>
+    <link href="https://fonts.googleapis.com/css?family=Fira+Sans" rel="stylesheet">
     @RenderSection("Styles", false)
 </head>
 <body>
-    <nav class="navbar navbar-inverse navbar-fixed-top">
+    <nav class="navbar navbar-fixed-top">
         <div class="container">
             <div class="navbar-header">
                 <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
@@ -32,6 +33,7 @@
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
                     <li><a asp-page="/Control">Control</a></li>
+                    <li><a asp-page="/Radio">Radio</a></li>
                     <li><a asp-page="/RadMac">RadMac</a></li>
                     <li><a asp-page="/Spotify">Spotify</a></li>
                 </ul>

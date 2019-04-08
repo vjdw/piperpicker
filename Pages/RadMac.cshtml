@@ -15,13 +15,15 @@
 }
 
 <div class="row">
-    <div class="col-md-3">
-        <h2>Radcliffe & Maconie</h2>
+    <div>
+        <div class="title-container">
+            <h3>Radcliffe & Maconie</h3>
+        </div>
         <ul class="episode-list">
             @foreach(var item in @Model.Episodes) {
                 <div class="episode-item-container">
-                    <li class="episode-item" >@item.Name</li>
-                    <button type="button" class="episode-play" onclick="play('@item.Uri')" >Play</button>
+                    <img class="icon episode-play" src="/images/play.svg" onclick="play('@item.Uri')"/>
+                    <li class="episode-item" onclick="play('@item.Uri')">@item.Name</li>
                 </div>
             }
         </ul>

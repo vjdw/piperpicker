@@ -40,6 +40,14 @@ namespace PiperPicker.Controllers
             return new JsonResult(new {Result = "ok"});
         }
 
+        [HttpGet("playstate")]
+        public async Task<ActionResult> PlayState()
+        {
+            var state = await MopidyProxy.GetState();
+
+            return new JsonResult(new {Result = "ok", State = state.Result});
+        }
+
         [HttpPost("play")]
         public async Task<ActionResult> Play()
         {
@@ -51,9 +59,9 @@ namespace PiperPicker.Controllers
         [HttpPost("togglepause")]
         public async Task<ActionResult> TogglePause()
         {
-            await MopidyProxy.TogglePause();
+            var newPlayingState = await MopidyProxy.TogglePause();
 
-            return new JsonResult(new {Result = "ok"});
+            return new JsonResult(new {Result = "ok", State = newPlayingState});
         }
 
         [JsonObject]
