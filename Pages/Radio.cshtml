@@ -1,7 +1,7 @@
 @page
 @model RadioModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "piperpicker";
 }
 @inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
 @functions{
@@ -42,18 +42,7 @@
                 },
                 data: JSON.stringify({uri: url}),
                 contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: successFunc,
-                error: errorFunc
+                dataType: "json"
             });
-
-            function successFunc(data, status) {
-                alert('ok')
-            }
-
-            function errorFunc(data) {
-                console.log(data)
-                alert('error');
-            }
     }
 </script>
