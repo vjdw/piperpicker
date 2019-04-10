@@ -32,6 +32,9 @@
                 reportPlayState('error');
             }
         });
+
+        $("#currentTrack").load("?handler=CurrentTrack");
+
     </script>
 }
 
@@ -40,7 +43,7 @@
         <h3>Control</h3>
     </div>
     <div class="status-container">
-        <p>@Model.Status.Name / @Model.Status.Comment</p>
+        <p id="currentTrack"></p>
         <p id="playState"></p>
     </div>
     <div class="controls-container">

@@ -4,7 +4,9 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -20,11 +22,15 @@ namespace PiperPicker.Pages
 
         public ControlModel()
         {
-            Task.Run(async () => {
-                Status = await MopidyProxy.GetCurrentTrack();
-            }).Wait();
         }
 
-        public MopidyProxy.CurrentTrackDto Status {get; set;}
+        public async Task<IActionResult> OnGetCurrentTrackAsync()
+        {
+            return new PartialViewResult()
+            {
+                ViewName = "_CurrentTrack",
+                ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = await MopidyProxy.GetCurrentTrack() }
+            };
+        }
     }
 }
