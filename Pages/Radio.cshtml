@@ -12,8 +12,14 @@
 }
 @section Styles {
 }
+@section Scripts {
+    <script>
+        $("#currentTrack").load("Control/?handler=CurrentTrack");
+    </script>
+}
 
 <div class="row">
+    <div id="currentTrack"></div>
     <div>
         <div class="title-container">
             <h3>Radio</h3>

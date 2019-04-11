@@ -1,0 +1,5 @@
+@model IEnumerable<PiperPicker.Proxies.SnapProxy.SnapClient>
+
+@foreach(var snapclient in @Model) {
+    <p>@snapclient.Host @(snapclient.Muted ? ": mute" : $"@ {snapclient.Volume}%")</p>
+}

@@ -89,13 +89,6 @@ namespace PiperPicker.Proxies
         }
 
         [JsonObject]
-        public class MopidyResponse
-        {
-            [JsonProperty]
-            public dynamic Result {get; set;}
-        }
-
-        [JsonObject]
         public class CurrentTrackDto
         {
             [JsonProperty]

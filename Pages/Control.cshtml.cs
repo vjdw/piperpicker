@@ -20,16 +20,23 @@ namespace PiperPicker.Pages
     {
         HttpClient _client = new HttpClient();
 
-        public ControlModel()
-        {
-        }
+        public ControlModel() { }
 
         public async Task<IActionResult> OnGetCurrentTrackAsync()
         {
             return new PartialViewResult()
             {
                 ViewName = "_CurrentTrack",
-                ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = await MopidyProxy.GetCurrentTrack() }
+                    ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = await MopidyProxy.GetCurrentTrack() }
+            };
+        }
+
+        public async Task<IActionResult> OnGetSnapClientsAsync()
+        {
+            return new PartialViewResult()
+            {
+                ViewName = "_SnapClients",
+                    ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = await SnapProxy.GetSnapClients() }
             };
         }
     }

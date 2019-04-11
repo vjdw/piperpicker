@@ -16,6 +16,31 @@
 }
 @section Scripts {
     <script>
+        function togglePlay() {
+            reportPlayState("submitted");
+
+            $.ajax({
+                    type: "POST",
+                    url: "api/mopidy/togglepause",
+                    headers:
+                    {
+                        "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
+                    },
+                    contentType: "application/json; charset=utf-8",
+                    dataType: "json",
+                    success: (toggleResult) => {reportPlayState(toggleResult.state);},
+                    error: (errorResponse) => {
+                        reportPlayState('error');
+                    }
+                });
+        }
+
+        function reportPlayState(playState) {
+            var element = document.getElementById('playState');
+            element.innerText = playState;
+        }
+
+        // TODO: make playstate partial to tidy this
         $.ajax({
             type: "GET",
             url: "api/mopidy/playstate",
@@ -35,6 +60,12 @@
 
         $("#currentTrack").load("?handler=CurrentTrack");
 
+        setTimeout(
+            function updateSnapClients() {
+                $("#snapClients").load("?handler=SnapClients")
+                setTimeout(updateSnapClients, 10000);
+        });
+
     </script>
 }
 
@@ -44,36 +75,10 @@
     </div>
     <div class="status-container">
         <p id="currentTrack"></p>
+        <p id="snapClients"></p>
         <p id="playState"></p>
     </div>
     <div class="controls-container">
         <img class="icon" src="/images/play-pause.svg" onclick="togglePlay()"/>
     </div>
 </div>
-
-<script>
-    function togglePlay() {
-        reportPlayState("submitted");
-
-        $.ajax({
-                type: "POST",
-                url: "api/mopidy/togglepause",
-                headers:
-                {
-                    "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
-                },
-                contentType: "application/json; charset=utf-8",
-                dataType: "json",
-                success: (toggleResult) => {reportPlayState(toggleResult.state);},
-                error: (errorResponse) => {
-                    reportPlayState('error');
-                }
-            });
-    }
-
-    function reportPlayState(playState) {
-        var element = document.getElementById('playState');
-        element.innerText = playState;
-    }
-
-</script>
