@@ -16,14 +16,14 @@ namespace PiperPicker.Controllers
     [ApiController]
     public class MopidyController : ControllerBase
     {
-        [HttpGet]
+        [HttpGet("episodes")]
         public async Task<ActionResult<IList<Episode>>> GetEpisodes()
         {
             return new JsonResult(await MopidyProxy.GetEpisodes());
         }
 
         [HttpPost("playepisode")]
-        public async Task<ActionResult> PlayEpisode([FromBody]PlayEpisodeDto data)
+        public async Task<ActionResult> PostPlayEpisode([FromBody]PlayEpisodeDto data)
         {
             await MopidyProxy.ClearQueue();
             await MopidyProxy.PlayEpisode(data.Uri);
@@ -33,7 +33,7 @@ namespace PiperPicker.Controllers
         }
 
         [HttpPost("clear")]
-        public async Task<ActionResult> ClearQueue()
+        public async Task<ActionResult> PostClearQueue()
         {
             await MopidyProxy.ClearQueue();
 
@@ -41,7 +41,7 @@ namespace PiperPicker.Controllers
         }
 
         [HttpGet("playstate")]
-        public async Task<ActionResult> PlayState()
+        public async Task<ActionResult> GetPlayState()
         {
             var state = await MopidyProxy.GetState();
 
@@ -49,7 +49,7 @@ namespace PiperPicker.Controllers
         }
 
         [HttpPost("play")]
-        public async Task<ActionResult> Play()
+        public async Task<ActionResult> PostPlay()
         {
             await MopidyProxy.Play();
 
@@ -57,7 +57,7 @@ namespace PiperPicker.Controllers
         }
 
         [HttpPost("togglepause")]
-        public async Task<ActionResult> TogglePause()
+        public async Task<ActionResult> PostTogglePause()
         {
             var newPlayingState = await MopidyProxy.TogglePause();
 
@@ -71,10 +71,6 @@ namespace PiperPicker.Controllers
             public string Uri {get; set;}
         }
 
-        public class EpisodeList
-        {
-            public IList<Episode> Result {get; set;}
-        }
         public class Episode
         {
             public string Name {get; set;}

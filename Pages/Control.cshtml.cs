@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PiperPicker.Pages.Components.SnapClient;
 using PiperPicker.Proxies;
 using static PiperPicker.Controllers.MopidyController;
 
@@ -22,22 +23,19 @@ namespace PiperPicker.Pages
 
         public ControlModel() { }
 
-        public async Task<IActionResult> OnGetCurrentTrackAsync()
+        public IActionResult OnGetSnapClientsView()
         {
-            return new PartialViewResult()
-            {
-                ViewName = "_CurrentTrack",
-                    ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = await MopidyProxy.GetCurrentTrack() }
-            };
+            return new ViewComponentResult() { ViewComponentName = SnapClientsViewComponent.Name };
         }
 
-        public async Task<IActionResult> OnGetSnapClientsAsync()
+        public IActionResult OnGetNowPlayingView()
         {
-            return new PartialViewResult()
-            {
-                ViewName = "_SnapClients",
-                    ViewData = new ViewDataDictionary(new EmptyModelMetadataProvider(), new ModelStateDictionary()) { Model = await SnapProxy.GetSnapClients() }
-            };
+            return new ViewComponentResult() { ViewComponentName = NowPlayingViewComponent.Name };
+        }
+
+        public IActionResult OnGetPlaybackStateView()
+        {
+            return new ViewComponentResult() { ViewComponentName = PlaybackStateViewComponent.Name };
         }
     }
 }

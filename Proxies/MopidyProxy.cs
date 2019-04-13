@@ -13,6 +13,9 @@ namespace PiperPicker.Proxies
 {
     public static class MopidyProxy
     {
+        // TODO: load from config
+        private static readonly string MopidyEndpoint = "http://hunchcorn:6680/mopidy/rpc";
+
         private static HttpClient _client = new HttpClient();
 
         public static async Task<StateDto> GetState()
@@ -21,11 +24,11 @@ namespace PiperPicker.Proxies
             return JsonConvert.DeserializeObject<StateDto>(responseContent);
         }
 
-        public static async Task<CurrentTrackDto> GetCurrentTrack()
+        public static async Task<NowPlayingDto> GetNowPlaying()
         {
             var responseContent = await MopidyPost("core.playback.get_current_track");
             var mopidyResponse = JObject.Parse(responseContent);
-            return mopidyResponse["result"].ToObject<CurrentTrackDto>();
+            return mopidyResponse["result"].ToObject<NowPlayingDto>();
         }
 
         public static async Task<IList<MopidyItem>> GetEpisodes()
@@ -70,7 +73,7 @@ namespace PiperPicker.Proxies
         private static async Task<string> MopidyPost(string method, string targetUri = null)
         {
             var content = new StringContent($"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" {(string.IsNullOrEmpty(targetUri) ? "" : $", \"params\":{{\"uri\":\"{targetUri}\"}}")} }}");
-            var response = await _client.PostAsync("http://hunchcorn:6680/mopidy/rpc", content);
+            var response = await _client.PostAsync($"{MopidyEndpoint}", content);
             return await response.Content.ReadAsStringAsync();
         }
 
@@ -89,7 +92,7 @@ namespace PiperPicker.Proxies
         }
 
         [JsonObject]
-        public class CurrentTrackDto
+        public class NowPlayingDto
         {
             [JsonProperty]
             public string Name {get; set;}

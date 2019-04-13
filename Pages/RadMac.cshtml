@@ -3,13 +3,6 @@
 @{
     ViewData["Title"] = "piperpicker";
 }
-@inject Microsoft.AspNetCore.Antiforgery.IAntiforgery Xsrf
-@functions{
-    public string GetAntiXsrfRequestToken()
-    {
-        return Xsrf.GetAndStoreTokens(Model.HttpContext).RequestToken;
-    }
-}
 @section Styles {
     <link href="@Url.Content("~/css/radmac.css")" rel="stylesheet" type="text/css" />
 }
@@ -22,28 +15,10 @@
         <ul class="episode-list">
             @foreach(var item in @Model.Episodes) {
                 <div class="episode-item-container">
-                    <img class="icon episode-play" src="/images/play.svg" onclick="play('@item.Uri')"/>
+                    <img class="icon episode-play" src="/images/play.svg" onclick="mopidyPlayUri('@item.Uri')"/>
                     <li class="episode-item" onclick="play('@item.Uri')">@item.Name</li>
                 </div>
             }
         </ul>
     </div>
 </div>
-
-<script>
-    function play(url) {
-        console.log('play ' + url)
-
-        $.ajax({
-                type: "POST",
-                url: "api/mopidy/playepisode",
-                headers:
-                {
-                    "RequestVerificationToken": '@GetAntiXsrfRequestToken()'
-                },
-                data: JSON.stringify({uri: url}),
-                contentType: "application/json; charset=utf-8",
-                dataType: "json"
-            });
-    }
-</script>

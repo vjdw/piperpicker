@@ -35,6 +35,7 @@ namespace PiperPicker
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
                 .AddRazorPagesOptions(options => {
                     options.Conventions.AddPageRoute("/Control", "/");
+                    options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
                 });
         }
 
