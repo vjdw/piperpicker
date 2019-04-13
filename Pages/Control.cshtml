@@ -14,8 +14,8 @@
         }
 
         $("#nowPlaying").load("?handler=NowPlayingView");
-        $("#snapClients").load("?handler=SnapClientsView");
         $("#playbackState").load("?handler=PlaybackStateView");
+        $("#snapClients").load("?handler=SnapClientsView");
 
     </script>
 }
@@ -24,12 +24,15 @@
     <div class="title-container">
         <h3>Control</h3>
     </div>
+
     <div class="status-container">
+        <div class="controls-container">
+            <img class="icon" src="/images/play-pause.svg" onclick="mopidyTogglePlay(function(s) { reportPlayState(s); })"/>
+        </div>
         <div id="nowPlaying"></div>
-        <div id="snapClients"></div>
         <div id="playbackState"></div>
     </div>
-    <div class="controls-container">
-        <img class="icon" src="/images/play-pause.svg" onclick="mopidyTogglePlay(function(s) { reportPlayState(s); })"/>
-    </div>
+
+    <div id="snapClients"></div>
+
 </div>
