@@ -1,28 +1,101 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PiperPicker.Hubs;
 
 namespace PiperPicker.Proxies
 {
+    public delegate void SnapNotificationEventHandler(object source, SnapNotificationEventArgs e);
+
+    public class SnapNotificationEventArgs : EventArgs
+    {
+        private string EventInfo;
+        public SnapNotificationEventArgs(string notification)
+        {
+            EventInfo = notification;
+        }
+        public string GetInfo()
+        {
+            return EventInfo;
+        }
+    }
+
     public static class SnapProxy
     {
         // TODO: load from config
         private static readonly string SnapServerHost = "hunchcorn";
         private static readonly int SnapServerPort = 1705;
 
-        public static async Task<IEnumerable<SnapClient>> GetSnapClients()
+        private static readonly NetworkStream _stream;
+        private static readonly object _clientReadLock = new object();
+        private static readonly object _clientWriteLock = new object();
+
+        public static event SnapNotificationEventHandler OnSnapNotification;
+
+        static SnapProxy()
         {
-            var request = BuildRpcRequest("Server.GetStatus");
-            string responseJson = await SendSnapRequest(request);
+            var client = new TcpClient();
+            try
+            {
+                client.Connect(SnapServerHost, SnapServerPort);
+                _stream = client.GetStream();
+                Task.Run(() => MonitorStream());
+            }
+            catch
+            {
+                throw new ApplicationException($"SnapProxy could not connect to snapserver on {SnapServerHost}:{SnapServerPort}");
+            }
+        }
+
+        private static void MonitorStream()
+        {
+            var rnd = new Random();
+            int readBufferSize = 16000;
+            byte[] bytesToRead = new byte[readBufferSize];
+
+            while (true)
+            {
+                Thread.Sleep(rnd.Next(900, 1100));
+                bool lockTaken = false;
+                try
+                {
+                    System.Threading.Monitor.TryEnter(_clientReadLock, 1000, ref lockTaken);
+                    if (lockTaken)
+                    {
+                        if (_stream.DataAvailable)
+                        {
+                            int bytesRead = _stream.Read(bytesToRead, 0, readBufferSize);
+                            var response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
+                            if (OnSnapNotification != null)
+                                OnSnapNotification(null, new SnapNotificationEventArgs(response));
+                        }
+                    }
+                }
+                finally
+                {
+                    if (lockTaken)
+                        Monitor.Exit(_clientReadLock);
+                }
+            }
+        }
+
+        public static IEnumerable<SnapClient> GetSnapClients()
+        {
+            var request = BuildSnapRequest("Server.GetStatus");
+            string responseJson = SendSnapRequest(request, waitForResponse : true);
             var response = JObject.Parse(responseJson);
 
             var groups = (JArray) response["result"]["server"]["groups"];
@@ -46,45 +119,57 @@ namespace PiperPicker.Proxies
             }
         }
 
-        public static async Task SetMute(string clientMac, bool muted)
+        public static void SetMute(string clientMac, bool muted)
         {
-            string request = BuildRpcRequest("Client.SetVolume", new { id = clientMac, volume = new { muted = muted } });
-            string responseJson = await SendSnapRequest(request);
-            var response = JObject.Parse(responseJson);
+            object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { muted = muted } });
+            SendSnapRequest(request);
         }
 
-        private static string BuildRpcRequest(string method, object @params = null)
+        private static object BuildSnapRequest(string method, object @params = null)
         {
-            var requestObj = new
+            dynamic requestObj = new
             {
             id = Guid.NewGuid().ToString("N"),
             jsonrpc = "2.0",
             method = method,
             @params = @params ?? new { }
             };
-            return JsonConvert.SerializeObject(requestObj);
+            return requestObj;
         }
 
-        private static async Task<string> SendSnapRequest(string request)
+        private static string SendSnapRequest(dynamic requestObj, bool waitForResponse = false)
         {
-            string response = null;
-            using(TcpClient client = new TcpClient())
+            lock(_clientReadLock)
             {
-                await client.ConnectAsync(SnapServerHost, SnapServerPort);
-                using(var stream = client.GetStream())
+                lock(_clientWriteLock)
                 {
-                    byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes($"{request}\r\n");
-                    stream.Write(bytesToSend, 0, bytesToSend.Length);
-                    await stream.FlushAsync();
+                    string requestId = requestObj.id;
 
-                    int readBufferSize = 16000;
-                    byte[] bytesToRead = new byte[readBufferSize];
-                    int bytesRead = await stream.ReadAsync(bytesToRead, 0, readBufferSize);
-                    response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
+                    var request = JsonConvert.SerializeObject(requestObj);
+                    byte[] bytesToSend = ASCIIEncoding.ASCII.GetBytes($"{request}\r\n");
+                    _stream.Write(bytesToSend, 0, bytesToSend.Length);
+                    _stream.Flush();
+
+                    if (waitForResponse)
+                    {
+                        int readBufferSize = 16000;
+                        byte[] bytesToRead = new byte[readBufferSize];
+
+                        for (int i = 0; i < 10; i++)
+                        {
+                            Thread.Sleep(50);
+                            if (_stream.DataAvailable)
+                            {
+                                int bytesRead = _stream.Read(bytesToRead, 0, readBufferSize);
+                                var response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
+                                if (response.Contains(requestId))
+                                    return response;
+                            }
+                        }
+                    }
+                    return "{}";
                 }
-                client.Close();
             }
-            return response;
         }
 
         [JsonObject]

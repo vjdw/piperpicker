@@ -1,14 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PiperPicker.Hubs;
+using PiperPicker.Proxies;
 
 namespace PiperPicker
 {
@@ -33,15 +37,29 @@ namespace PiperPicker
 
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                .AddRazorPagesOptions(options => {
+                .AddRazorPagesOptions(options =>
+                {
                     options.Conventions.AddPageRoute("/Control", "/");
                     options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
                 });
+
+            services.AddSignalR();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationLifetime lifetime, IApplicationBuilder app, IHostingEnvironment env)
         {
+            lifetime.ApplicationStarted.Register(async() =>
+            {
+                var client = new HttpClient();
+                SnapProxy.OnSnapNotification +=
+                    async(object sender, SnapNotificationEventArgs e) =>
+                    {
+                        // xyzzy fix hardcoded URL
+                        await client.PostAsync("http://localhost:5002/api/snap/snapnotification", new StringContent(""));
+                    };
+            });
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
@@ -56,7 +74,11 @@ namespace PiperPicker
             app.UseStaticFiles();
             app.UseCookiePolicy();
 
-            //app.UseMvc();
+            app.UseSignalR(routes =>
+            {
+                routes.MapHub<StateHub>("/stateHub");
+            });
+
             app.UseMvc();
         }
     }

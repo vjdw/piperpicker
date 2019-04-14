@@ -1,11 +1,10 @@
-﻿function setSnapClientMuted(clientMac, muted, successCallback) {
+﻿function setSnapClientMuted(clientMac, muted) {
     $.ajax({
             type: "POST",
             url: "api/snap/snapclientmute",
             contentType: "application/json; charset=utf-8",
             dataType: "json",
-            data: JSON.stringify({clientMac:clientMac,muted:muted}),
-            success: successCallback()
+            data: JSON.stringify({clientMac:clientMac,muted:muted})
         });
 }
 
@@ -29,8 +28,8 @@ function mopidyPlayUri(uri) {
         });
 }
 
-function reloadMe() {
+function reloadMe(container, viewSource) {
     setTimeout(function() {
-        $("#snapclients-container").parent().load("control/?handler=SnapClientsView");
+        $(container).parent().load(viewSource);
     }, 500);
 }

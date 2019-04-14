@@ -7,9 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using Microsoft.AspNetCore.SignalR;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PiperPicker.Hubs;
 using PiperPicker.Pages.Components.SnapClient;
 using PiperPicker.Proxies;
 using static PiperPicker.Controllers.MopidyController;
@@ -19,10 +21,6 @@ namespace PiperPicker.Pages
     [BindProperties]
     public class ControlModel : PageModel
     {
-        HttpClient _client = new HttpClient();
-
-        public ControlModel() { }
-
         public IActionResult OnGetSnapClientsView()
         {
             return new ViewComponentResult() { ViewComponentName = SnapClientsViewComponent.Name };

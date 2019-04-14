@@ -12,7 +12,7 @@ namespace PiperPicker.Pages.Components.SnapClient
         
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            var snapClients = await SnapProxy.GetSnapClients();
+            var snapClients = SnapProxy.GetSnapClients();
             return View("Default", snapClients);
         }
     }
