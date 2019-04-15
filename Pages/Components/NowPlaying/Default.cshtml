@@ -1,3 +1,14 @@
 @model PiperPicker.Proxies.MopidyProxy.NowPlayingDto
 
-<div>@Model.Name</div>
+<div id="status-container" class="status-container">
+    <div class="controls-container">
+        <div
+            class="icon playpause @(Model.State == "playing" ? "pause" : "play" )"
+            onclick="mopidyTogglePlay(function(s) { reloadMe('#status-container', 'control/?handler=NowPlayingView'); })">
+        </div>
+    </div>
+    <div class="nowplaying-container">
+        <div class="nowplaying-name">@Model.Name</div>
+    </div>
+    
+</div>

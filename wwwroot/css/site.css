@@ -72,6 +72,10 @@ $green:     #859900;
     color: #657b83 !important;
 }
 
+.active-page {
+    box-shadow: 0px 1px 7px 1px #00000080;
+}
+
 .icon {
     width: 3em;
     height: 3em;
@@ -91,6 +95,24 @@ ul {
     list-style-type: none;
     margin: 0;
     padding: 0;
+}
+
+.status-container {
+    background-color: #eee8d5;
+}
+
+.controls-container {
+    display: flex;
+    justify-content: center;
+}
+
+.nowplaying-container {
+    display: flex;
+    justify-content: center;
+}
+
+.nowplaying-name {
+    color: #268bd2;
 }
 
 .episode-item-container {
@@ -114,24 +136,32 @@ ul {
 .icon {
     width: 3em;
     height: 3em;
+    margin: 1.5em;
 }
 
 .icon.mute-on {
     background: url("/images/mute-on.svg");
     background-size: cover;
-    margin: 1.5em;
 }
 
 .icon.mute-off {
     background: url("/images/mute-off.svg");
     background-size: cover;
-    margin: 1.5em;
+}
+
+.icon.playpause.play {
+    background: url("/images/play.svg");
+    background-size: cover;
+}
+
+.icon.playpause.pause {
+    background: url("/images/pause.svg");
+    background-size: cover;
 }
 
 .icon.spinner {
-    background: url("/images/spinner.svg");
-    background-size: cover;
-    margin: 1.5em;
+    background: url("/images/spinner.svg") !important;
+    background-size: cover !important;
     animation-name: spin;
     animation-duration: 350ms;
     animation-iteration-count: infinite;

@@ -1,4 +1,19 @@
-﻿<!DOCTYPE html>
+﻿@functions {
+    string ActivePageClass(string page)
+    {
+        page = $"/{page.ToLower()}";
+        var url = Context.Request.Path.Value.ToLower();
+
+        if (url.Contains(page) || (url == "/" && page == "/control"))
+        {
+            return "active-page";
+        }
+        
+        return "";
+    }
+}
+
+<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -39,10 +54,10 @@
             </div>
             <div class="navbar-collapse collapse">
                 <ul class="nav navbar-nav">
-                    <li><a asp-page="/Control">Control</a></li>
-                    <li><a asp-page="/Radio">Radio</a></li>
-                    <li><a asp-page="/RadMac">RadMac</a></li>
-                    <li><a asp-page="/Spotify">Spotify</a></li>
+                    <li><a class="@(ActivePageClass("Control"))" asp-page="/Control">Control</a></li>
+                    <li><a class="@(ActivePageClass("Radio"))" asp-page="/Radio">Radio</a></li>
+                    <li><a class="@(ActivePageClass("RadMac"))" asp-page="/RadMac">RadMac</a></li>
+                    <li><a class="@(ActivePageClass("Spotify"))" asp-page="/Spotify">Spotify</a></li>
                 </ul>
             </div>
         </div>
@@ -72,6 +87,7 @@
                 integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa">
         </script>
         <script src="~/js/site.min.js" asp-append-version="true"></script>
+        <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
     </environment>
 
     @RenderSection("Scripts", required: false)

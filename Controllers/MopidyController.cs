@@ -40,14 +40,6 @@ namespace PiperPicker.Controllers
             return new JsonResult(new {Result = "ok"});
         }
 
-        [HttpGet("playstate")]
-        public async Task<ActionResult> GetPlayState()
-        {
-            var state = await MopidyProxy.GetState();
-
-            return new JsonResult(new {Result = "ok", State = state.Result});
-        }
-
         [HttpPost("play")]
         public async Task<ActionResult> PostPlay()
         {

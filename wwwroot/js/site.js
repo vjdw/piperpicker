@@ -15,22 +15,23 @@ function mopidyTogglePlay(displayStateCallback) {
             url: "api/mopidy/togglepause",
             contentType: "application/json; charset=utf-8",
             dataType: "json",
-            success: (toggleResult) => {displayStateCallback(toggleResult.state);}
+            success: (toggleResult) => { displayStateCallback(toggleResult.state); }
         });
 }
 
-function mopidyPlayUri(uri) {
+function mopidyPlayUri(uri, displayStateCallback) {
     $.ajax({
             type: "POST",
             url: "api/mopidy/playepisode",
             data: JSON.stringify({uri: uri}),
             contentType: "application/json; charset=utf-8",
-            dataType: "json"
+            dataType: "json",
+            success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state);}
         });
 }
 
 function reloadMe(container, viewSource) {
     setTimeout(function() {
-        $(container).parent().load(viewSource);
+        $(container).parent().load(viewSource)
     }, 500);
 }

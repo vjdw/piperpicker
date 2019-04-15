@@ -30,10 +30,5 @@ namespace PiperPicker.Pages
         {
             return new ViewComponentResult() { ViewComponentName = NowPlayingViewComponent.Name };
         }
-
-        public IActionResult OnGetPlaybackStateView()
-        {
-            return new ViewComponentResult() { ViewComponentName = PlaybackStateViewComponent.Name };
-        }
     }
 }

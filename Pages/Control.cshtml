@@ -9,12 +9,7 @@
 @section Scripts {
     <script>
 
-        function reportPlayState(playState) {
-            $("#playbackState").load("?handler=PlaybackStateView");
-        }
-
         $("#nowPlaying").load("?handler=NowPlayingView");
-        $("#playbackState").load("?handler=PlaybackStateView");
         $("#snapClients").load("?handler=SnapClientsView");
 
         // xyzzy could move some of this to site.js?
@@ -29,14 +24,7 @@
 
 <div class="row">
 
-    <div class="status-container">
-        <div class="controls-container">
-            <img class="icon" src="/images/play-pause.svg" onclick="mopidyTogglePlay(function(s) { reportPlayState(s); })"/>
-        </div>
-        <div id="nowPlaying"></div>
-        <div id="playbackState"></div>
-    </div>
-
+    <div id="nowPlaying"></div>
     <div id="snapClients"></div>
 
 </div>

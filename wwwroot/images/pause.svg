@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Generator: Adobe Illustrator 18.1.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   version="1.1"
+   id="Capa_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 27.494 27.494"
+   style="enable-background:new 0 0 27.494 27.494;"
+   xml:space="preserve"
+   sodipodi:docname="pause.svg"
+   inkscape:version="0.92.3 (2405546, 2018-03-11)"><metadata
+   id="metadata70"><rdf:RDF><cc:Work
+       rdf:about=""><dc:format>image/svg+xml</dc:format><dc:type
+         rdf:resource="http://purl.org/dc/dcmitype/StillImage" /></cc:Work></rdf:RDF></metadata><defs
+   id="defs68" /><sodipodi:namedview
+   pagecolor="#ffffff"
+   bordercolor="#666666"
+   borderopacity="1"
+   objecttolerance="10"
+   gridtolerance="10"
+   guidetolerance="10"
+   inkscape:pageopacity="0"
+   inkscape:pageshadow="2"
+   inkscape:window-width="1366"
+   inkscape:window-height="749"
+   id="namedview66"
+   showgrid="false"
+   inkscape:zoom="20.695425"
+   inkscape:cx="13.046362"
+   inkscape:cy="13.747"
+   inkscape:window-x="0"
+   inkscape:window-y="0"
+   inkscape:window-maximized="0"
+   inkscape:current-layer="Capa_1" />
+<ellipse
+   style="fill:#fdf6e3;fill-opacity:1"
+   id="path72"
+   cx="13.747"
+   cy="13.747"
+   rx="9.7364511"
+   ry="10.026371" /><g
+   id="g63">
+	<g
+   id="c137_pause">
+		<path
+   style="fill:#b58900;"
+   d="M13.747,0C6.155,0,0,6.154,0,13.747c0,7.594,6.155,13.747,13.747,13.747    c7.593,0,13.747-6.153,13.747-13.747C27.494,6.154,21.34,0,13.747,0z M11.937,20.483c0,0.177-0.144,0.322-0.318,0.322h-2.68    c-0.177,0-0.317-0.146-0.317-0.322V7.007c0-0.172,0.141-0.317,0.317-0.317h2.68c0.175,0,0.318,0.146,0.318,0.317V20.483z     M18.875,20.483c0,0.177-0.145,0.322-0.318,0.322h-2.681c-0.174,0-0.319-0.146-0.319-0.322V7.007c0-0.172,0.146-0.317,0.319-0.317    h2.681c0.174,0,0.318,0.146,0.318,0.317V20.483z"
+   id="path60" />
+	</g>
+</g>
+</svg>

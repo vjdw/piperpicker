@@ -6,12 +6,15 @@
 @section Styles {
     <link href="@Url.Content("~/css/radmac.css")" rel="stylesheet" type="text/css" />
 }
+@section Scripts {
+    <script>
+        $("#nowPlaying").load("Control/?handler=NowPlayingView");
+    </script>
+}
 
 <div class="row">
+    <div id="nowPlaying"></div>
     <div>
-        <div class="title-container">
-            <h3>Radcliffe & Maconie</h3>
-        </div>
         <ul class="episode-list">
             @foreach(var item in @Model.Episodes) {
                 <div class="episode-item-container">

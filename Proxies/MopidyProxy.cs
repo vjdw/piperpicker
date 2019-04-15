@@ -28,9 +28,15 @@ namespace PiperPicker.Proxies
 
         public static async Task<NowPlayingDto> GetNowPlaying()
         {
-            var responseContent = await MopidyPost("core.playback.get_current_track");
-            var mopidyResponse = JObject.Parse(responseContent);
-            return mopidyResponse["result"].ToObject<NowPlayingDto>();
+            var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
+            var stateResponseTask = MopidyPost("core.playback.get_state");
+
+            var mopidyResponse = JObject.Parse(await currentTrackResponseTask);
+            var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>()
+                ?? new NowPlayingDto();
+            nowPlaying.State = JsonConvert.DeserializeObject<StateDto>(await stateResponseTask).Result;
+
+            return nowPlaying;
         }
 
         public static async Task<IList<MopidyItem>> GetEpisodes()
@@ -96,6 +102,9 @@ namespace PiperPicker.Proxies
         [JsonObject]
         public class NowPlayingDto
         {
+            [JsonProperty]
+            public string State { get; set; }
+
             [JsonProperty]
             public string Name { get; set; }
 
