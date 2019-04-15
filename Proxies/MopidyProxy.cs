@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -81,37 +83,40 @@ namespace PiperPicker.Proxies
         public class PlayMopidyItemDto
         {
             [JsonProperty]
-            public string Uri {get; set;}
+            public string Uri { get; set; }
         }
 
         [JsonObject]
         public class StateDto
         {
             [JsonProperty]
-            public string Result {get; set;}
+            public string Result { get; set; }
         }
 
         [JsonObject]
         public class NowPlayingDto
         {
             [JsonProperty]
-            public string Name {get; set;}
+            public string Name { get; set; }
+
             [JsonProperty]
-            public string Uri {get; set;}
+            public string Uri { get; set; }
+
             [JsonProperty]
-            public string Comment {get; set;}
+            public string Comment { get; set; }
+
             [JsonProperty]
-            public string Date {get; set;}
+            public string Date { get; set; }
         }
 
         public class MopidyItems
         {
-            public IList<MopidyItem> Result {get; set;}
+            public IList<MopidyItem> Result { get; set; }
         }
         public class MopidyItem
         {
-            public string Name {get; set;}
-            public string Uri {get; set;}
+            public string Name { get; set; }
+            public string Uri { get; set; }
         }
     }
 }

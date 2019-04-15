@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PiperPicker.HostedServices;
 using PiperPicker.Hubs;
 using PiperPicker.Proxies;
 
@@ -44,22 +45,14 @@ namespace PiperPicker
                 });
 
             services.AddSignalR();
+
+            services.AddHostedService<HostedServiceRunner>();
+            services.AddScoped<SnapScopedProcessingService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationLifetime lifetime, IApplicationBuilder app, IHostingEnvironment env)
         {
-            lifetime.ApplicationStarted.Register(async() =>
-            {
-                var client = new HttpClient();
-                SnapProxy.OnSnapNotification +=
-                    async(object sender, SnapNotificationEventArgs e) =>
-                    {
-                        // xyzzy fix hardcoded URL
-                        await client.PostAsync("http://localhost:5002/api/snap/snapnotification", new StringContent(""));
-                    };
-            });
-
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();

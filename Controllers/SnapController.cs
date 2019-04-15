@@ -25,14 +25,6 @@ namespace PiperPicker.Controllers
             _stateHubContext = hubContext;
         }
 
-        [HttpPost("snapnotification")]
-        public async Task<ActionResult> PostSnapNotification()
-        {
-            await _stateHubContext.Clients.All.SendAsync("SnapNotification", "xyzzy-movetoseparatecontroller?");
-
-            return new JsonResult(new { Result = "ok" });
-        }
-
         [HttpPost("snapclientmute")]
         public async Task<ActionResult> PostSnapClientMute([FromBody] PostSnapClientMuteDto dto)
         {
