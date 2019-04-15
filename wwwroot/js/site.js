@@ -1,4 +1,5 @@
-﻿function setSnapClientMuted(clientMac, muted) {
+﻿function setSnapClientMuted(e, clientMac, muted) {
+    $(e).toggleClass("spinner");
     $.ajax({
             type: "POST",
             url: "api/snap/snapclientmute",

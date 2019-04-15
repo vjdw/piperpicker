@@ -4,7 +4,10 @@
     @foreach(var snapclient in @Model) {
         <div class="snapclient-container">
             <p>@snapclient.Host @(snapclient.Muted ? ": mute" : $"@ {snapclient.Volume}%")</p>
-            <img class="icon episode-play" src="/images/play.svg" onclick="setSnapClientMuted('@snapclient.Mac', @(Json.Serialize(!snapclient.Muted)))"/>
+            <div
+                class="icon episode-play @(snapclient.Muted ? "mute-on" : "mute-off")"
+                onclick="setSnapClientMuted(this, '@snapclient.Mac', @(Json.Serialize(!snapclient.Muted)))">
+            </div>
         </div>
     }
 </div>

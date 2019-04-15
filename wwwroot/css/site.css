@@ -18,21 +18,32 @@ $cyan:      #2aa198;
 $green:     #859900;
 */
 
-*{font-family: 'Fira Sans', sans-serif !important;}
-.bold{font-weight:bold;}
-.italic{font-style: italic;}
-.oblique{font-style: oblique;}
+* {
+    font-family: 'Fira Sans', sans-serif !important;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.italic {
+    font-style: italic;
+}
+
+.oblique {
+    font-style: oblique;
+}
 
 .navbar {
     background-color: #b58900;
 }
 
 .navbar-brand,
-.navbar-nav > li > a {
+.navbar-nav>li>a {
     color: #073642 !important;
 }
 
-.navbar-nav > li > a:hover {
+.navbar-nav>li>a:hover {
     color: #eee8d5 !important;
 }
 
@@ -41,7 +52,7 @@ $green:     #859900;
 }
 
 .navbar-toggle {
-    background-color:  #fdf6e380 !important;
+    background-color: #fdf6e380 !important;
     border-color: #073642 !important;
 }
 
@@ -50,8 +61,8 @@ $green:     #859900;
     background-color: #fdf6e3 !important;
 }
 
-.navbar-nav > li > a:hover,
-.navbar-nav > li > a:focus {
+.navbar-nav>li>a:hover,
+.navbar-nav>li>a:focus {
     background-color: #eee8d5 !important;
     color: #657b83 !important;
 }
@@ -95,6 +106,39 @@ ul {
     justify-content: center;
 }
 
+.icon {
+    width: 3em;
+    height: 3em;
+}
+
+.icon.mute-on {
+    background: url("/images/mute-on.svg");
+    background-size: cover;
+}
+
+.icon.mute-off {
+    background: url("/images/mute-off.svg");
+    background-size: cover;
+}
+
+.icon.spinner {
+    background: url("/images/spinner.svg");
+    background-size: cover;
+    animation-name: spin;
+    animation-duration: 350ms;
+    animation-iteration-count: infinite;
+    animation-timing-function: steps(8);
+}
+
+@keyframes spin {
+    from {
+        transform:rotate(0deg);
+    }
+    to {
+        transform:rotate(360deg);
+    }
+}
+
 /* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification 
 for details on configuring this project to bundle and minify static web assets. */
 body {
@@ -129,6 +173,7 @@ body {
 
 /* Hide/rearrange for smaller screens */
 @media screen and (max-width: 767px) {
+
     /* Hide captions */
     .carousel-caption {
         display: none;
