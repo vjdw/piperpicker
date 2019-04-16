@@ -48,6 +48,7 @@ namespace PiperPicker
 
             services.AddHostedService<HostedServiceRunner>();
             services.AddScoped<SnapScopedProcessingService>();
+            services.AddScoped<MopidyScopedProcessingService>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

@@ -13,12 +13,29 @@ using Newtonsoft.Json.Linq;
 
 namespace PiperPicker.Proxies
 {
+    public delegate void MopidyNotificationEventHandler(object source, MopidyNotificationEventArgs e);
+
+    public class MopidyNotificationEventArgs : EventArgs
+    {
+        private string EventInfo;
+        public MopidyNotificationEventArgs(string notification)
+        {
+            EventInfo = notification;
+        }
+        public string GetInfo()
+        {
+            return EventInfo;
+        }
+    }
+
     public static class MopidyProxy
     {
         // TODO: load from config
         private static readonly string MopidyEndpoint = "http://hunchcorn:6680/mopidy/rpc";
 
         private static HttpClient _client = new HttpClient();
+
+        public static event MopidyNotificationEventHandler OnMopidyNotification;
 
         public static async Task<StateDto> GetState()
         {
@@ -61,6 +78,8 @@ namespace PiperPicker.Proxies
         public static async Task Play()
         {
             await MopidyPost("core.playback.play");
+
+            RaiseEvent("play");
         }
 
         public static async Task<string> TogglePause()
@@ -69,11 +88,13 @@ namespace PiperPicker.Proxies
             if (state.Result == "playing")
             {
                 await MopidyPost("core.playback.pause");
+                RaiseEvent("pause");
                 return "paused";
             }
             else
             {
                 await MopidyPost("core.playback.play");
+                RaiseEvent("play");
                 return "playing";
             }
         }
@@ -83,6 +104,12 @@ namespace PiperPicker.Proxies
             var content = new StringContent($"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" {(string.IsNullOrEmpty(targetUri) ? "" : $", \"params\":{{\"uri\":\"{targetUri}\"}}")} }}");
             var response = await _client.PostAsync($"{MopidyEndpoint}", content);
             return await response.Content.ReadAsStringAsync();
+        }
+
+        private static void RaiseEvent(string info)
+        {
+            if (OnMopidyNotification != null)
+                OnMopidyNotification(null, new MopidyNotificationEventArgs("playepisode"));
         }
 
         [JsonObject]

@@ -8,7 +8,16 @@
 }
 @section Scripts {
     <script>
+
         $("#nowPlaying").load("Control/?handler=NowPlayingView");
+
+        // xyzzy could move some of this to site.js and/or _Layout.cshtml?
+        var hubConnection = new signalR.HubConnectionBuilder().withUrl("/stateHub").build();
+        hubConnection.start();
+        hubConnection.on("MopidyNotification", function (message) {
+            reloadMe('#status-container', 'control/?handler=NowPlayingView')
+        });
+
     </script>
 }
 

@@ -23,6 +23,9 @@ namespace PiperPicker.HostedServices
             {
                 var snapService = scope.ServiceProvider.GetRequiredService<SnapScopedProcessingService>();
                 snapService.DoWork();
+
+                var mopidyService = scope.ServiceProvider.GetRequiredService<MopidyScopedProcessingService>();
+                mopidyService.DoWork();
             }
 
             return Task.CompletedTask;

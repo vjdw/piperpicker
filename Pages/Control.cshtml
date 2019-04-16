@@ -12,11 +12,14 @@
         $("#nowPlaying").load("?handler=NowPlayingView");
         $("#snapClients").load("?handler=SnapClientsView");
 
-        // xyzzy could move some of this to site.js?
+        // xyzzy could move some of this to site.js and/or _Layout.cshtml?
         var hubConnection = new signalR.HubConnectionBuilder().withUrl("/stateHub").build();
         hubConnection.start();
         hubConnection.on("SnapNotification", function (message) {
             reloadMe('#snapclients-container', 'control/?handler=SnapClientsView')
+        });
+        hubConnection.on("MopidyNotification", function (message) {
+            reloadMe('#status-container', 'control/?handler=NowPlayingView')
         });
 
     </script>

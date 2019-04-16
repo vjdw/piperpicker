@@ -41,7 +41,7 @@ namespace PiperPicker.Proxies
         private static readonly string SnapServerHost = "hunchcorn";
         private static readonly int SnapServerPort = 1705;
 
-        private static readonly NetworkStream _stream;
+        private static NetworkStream _stream;
         private static readonly object _clientReadLock = new object();
         private static readonly object _clientWriteLock = new object();
 
@@ -70,26 +70,52 @@ namespace PiperPicker.Proxies
 
             while (true)
             {
-                Thread.Sleep(rnd.Next(900, 1100));
-                bool lockTaken = false;
                 try
                 {
-                    System.Threading.Monitor.TryEnter(_clientReadLock, 1000, ref lockTaken);
-                    if (lockTaken)
+                    Thread.Sleep(rnd.Next(900, 1100));
+                    bool lockTaken = false;
+                    try
                     {
-                        if (_stream.DataAvailable)
+                        System.Threading.Monitor.TryEnter(_clientReadLock, 1000, ref lockTaken);
+                        if (lockTaken)
                         {
-                            int bytesRead = _stream.Read(bytesToRead, 0, readBufferSize);
-                            var response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
-                            if (OnSnapNotification != null)
-                                OnSnapNotification(null, new SnapNotificationEventArgs(response));
+                            if (_stream.DataAvailable)
+                            {
+                                int bytesRead = _stream.Read(bytesToRead, 0, readBufferSize);
+                                var response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
+                                if (OnSnapNotification != null)
+                                    OnSnapNotification(null, new SnapNotificationEventArgs(response));
+                            }
                         }
                     }
+                    finally
+                    {
+                        if (lockTaken)
+                            Monitor.Exit(_clientReadLock);
+                    }
                 }
-                finally
+                catch
                 {
-                    if (lockTaken)
-                        Monitor.Exit(_clientReadLock);
+                    Thread.Sleep(60000);
+
+                    lock(_clientReadLock)
+                    {
+                        lock(_clientWriteLock)
+                        {
+                            try { _stream.Dispose(); }
+                            catch { }
+                            try
+                            {
+                                var client = new TcpClient();
+                                client.Connect(SnapServerHost, SnapServerPort);
+                                _stream = client.GetStream();
+                            }
+                            catch
+                            {
+                                // TODO: xyzzy / fix logging
+                            }
+                        }
+                    }
                 }
             }
         }
