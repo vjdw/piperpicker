@@ -33,10 +33,27 @@ namespace PiperPicker.Controllers
             return new JsonResult(new { Result = "ok" });
         }
 
+        [HttpPost("snapclientglobalvolume")]
+        public async Task<ActionResult> PostSnapClientGlobalVolume([FromBody] PostSnapClientGlobalVolumeDto dto)
+        {
+            var snapClients = SnapProxy.GetSnapClients();
+            foreach (var client in snapClients)
+            {
+                SnapProxy.SetVolume(client.Mac, dto.PercentagePointChange);
+            }
+
+            return new JsonResult(new { Result = "ok" });
+        }
+
         public class PostSnapClientMuteDto
         {
             public string ClientMac { get; set; }
             public bool Muted { get; set; }
+        }
+
+        public class PostSnapClientGlobalVolumeDto
+        {
+            public int PercentagePointChange { get; set; }
         }
     }
 }

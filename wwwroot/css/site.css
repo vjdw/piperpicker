@@ -154,12 +154,23 @@ ul {
     background-size: cover;
 }
 
+.icon.plus {
+    background: url("/images/plus.svg");
+    background-size: cover;
+}
+
+.icon.minus {
+    background: url("/images/minus.svg");
+    background-size: cover;
+}
+
 .icon.playpause.pause {
     background: url("/images/pause.svg");
     background-size: cover;
 }
 
 .icon.spinner {
+    color: transparent;
     background: url("/images/spinner.svg") !important;
     background-size: cover !important;
     animation-name: spin;
@@ -177,6 +188,17 @@ ul {
     }
 }
 
+#global-volume-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.current-volume {
+    padding-top: 0.7em;
+    padding-left: 0.5em;
+}
+
 #snapclients-container {
     display: flex;
     justify-content: space-evenly;
@@ -188,10 +210,6 @@ ul {
     flex-direction: column;
     align-items: center;
     margin-top: 3em;
-}
-
-.snapclient-info-item {
-
 }
 
 /* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification 

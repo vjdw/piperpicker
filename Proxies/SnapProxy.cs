@@ -139,7 +139,7 @@ namespace PiperPicker.Proxies
                                 Volume = client["config"]["volume"].Value<int>("percent")
                         }));
 
-                return snapclients;
+                return snapclients.OrderBy(_ => _.Host);
             }
             catch (Exception ex)
             {
@@ -147,10 +147,40 @@ namespace PiperPicker.Proxies
             }
         }
 
+        public static SnapClient GetSnapClient(string clientMac)
+        {
+            var request = BuildSnapRequest("Client.GetStatus", new { id = clientMac });
+            string responseJson = SendSnapRequest(request, waitForResponse : true);
+            var response = JObject.Parse(responseJson);
+
+            var client = (JObject) response["result"]["client"];
+            return new SnapClient()
+            {
+                Host = client["host"].Value<string>("name"),
+                    Mac = client["host"].Value<string>("mac"),
+                    Muted = client["config"]["volume"].Value<bool>("muted"),
+                    Volume = client["config"]["volume"].Value<int>("percent")
+            };
+        }
+
         public static void SetMute(string clientMac, bool muted)
         {
             object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { muted = muted } });
             SendSnapRequest(request);
+        }
+
+        public static void SetVolume(string clientMac, int percentagePointChange)
+        {
+            lock(_clientReadLock)
+            {
+                lock(_clientWriteLock)
+                {
+                    var client = GetSnapClient(clientMac);
+                    var newVolume = Math.Clamp(client.Volume + percentagePointChange, 0, 100);
+                    object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { percent = newVolume } });
+                    SendSnapRequest(request);
+                }
+            }
         }
 
         private static object BuildSnapRequest(string method, object @params = null)
@@ -180,18 +210,20 @@ namespace PiperPicker.Proxies
 
                     if (waitForResponse)
                     {
-                        int readBufferSize = 16000;
-                        byte[] bytesToRead = new byte[readBufferSize];
-
                         for (int i = 0; i < 10; i++)
                         {
                             Thread.Sleep(50);
+                            int readBufferSize = 16000;
+                            byte[] bytesToRead = new byte[readBufferSize];
                             if (_stream.DataAvailable)
                             {
                                 int bytesRead = _stream.Read(bytesToRead, 0, readBufferSize);
-                                var response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
-                                if (response.Contains(requestId))
-                                    return response;
+                                var responses = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
+                                foreach (var response in responses.Split("\r\n"))
+                                {
+                                    if (response.Contains(requestId))
+                                       return response;
+                                }
                             }
                         }
                     }

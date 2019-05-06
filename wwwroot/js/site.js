@@ -9,6 +9,18 @@
         });
 }
 
+function setSnapClientGlobalVolume(e, percentagePointChange) {
+    $(".current-volume").addClass("spinner");
+    $.ajax({
+        type: "POST",
+        url: "api/snap/snapclientglobalvolume",
+        contentType: "application/json; charset=utf-8",
+        async: true,
+        dataType: "json",
+        data: JSON.stringify({PercentagePointChange:percentagePointChange})
+    });
+}
+
 function mopidyTogglePlay(displayStateCallback) {
     $.ajax({
             type: "POST",

@@ -1,5 +1,19 @@
 @model IEnumerable<PiperPicker.Proxies.SnapProxy.SnapClient>
 
+<div id="global-volume-container">
+    <div
+        class="icon minus"
+        onclick="setSnapClientGlobalVolume(this, -5)">
+    </div>
+    <div class="icon current-volume">
+        @(Math.Round(Model.Average(_ => _.Volume)))%
+    </div>
+    <div
+        class="icon plus"
+        onclick="setSnapClientGlobalVolume(this, 5)">
+    </div>
+</div>
+
 <div id="snapclients-container">
     @foreach(var snapclient in @Model) {
         <div class="snapclient-container">
