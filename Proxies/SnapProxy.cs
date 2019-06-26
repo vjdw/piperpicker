@@ -147,20 +147,27 @@ namespace PiperPicker.Proxies
             }
         }
 
-        public static SnapClient GetSnapClient(string clientMac)
+        public static bool TryGetSnapClient(string clientMac, out SnapClient snapclient)
         {
             var request = BuildSnapRequest("Client.GetStatus", new { id = clientMac });
             string responseJson = SendSnapRequest(request, waitForResponse : true);
             var response = JObject.Parse(responseJson);
 
-            var client = (JObject) response["result"]["client"];
-            return new SnapClient()
+            if (response.ContainsKey("result") && ((JObject) response["result"]).ContainsKey("client"))
             {
-                Host = client["host"].Value<string>("name"),
+                var client = (JObject) response["result"]["client"];
+                snapclient = new SnapClient()
+                {
+                    Host = client["host"].Value<string>("name"),
                     Mac = client["host"].Value<string>("mac"),
                     Muted = client["config"]["volume"].Value<bool>("muted"),
                     Volume = client["config"]["volume"].Value<int>("percent")
-            };
+                };
+                return true;
+            }
+
+            snapclient = null;
+            return false;
         }
 
         public static void SetMute(string clientMac, bool muted)
@@ -175,10 +182,12 @@ namespace PiperPicker.Proxies
             {
                 lock(_clientWriteLock)
                 {
-                    var client = GetSnapClient(clientMac);
-                    var newVolume = Math.Clamp(client.Volume + percentagePointChange, 0, 100);
-                    object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { percent = newVolume } });
-                    SendSnapRequest(request);
+                    if (TryGetSnapClient(clientMac, out var client))
+                    {
+                        var newVolume = Math.Clamp(client.Volume + percentagePointChange, 0, 100);
+                        object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { percent = newVolume } });
+                        SendSnapRequest(request);
+                    }
                 }
             }
         }
@@ -222,7 +231,7 @@ namespace PiperPicker.Proxies
                                 foreach (var response in responses.Split("\r\n"))
                                 {
                                     if (response.Contains(requestId))
-                                       return response;
+                                        return response;
                                 }
                             }
                         }
