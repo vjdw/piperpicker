@@ -47,3 +47,14 @@ function reloadMe(container, viewSource) {
         $(container).parent().load(viewSource)
     }, 500);
 }
+
+function lightingColour() {
+    $.ajax({
+        type: "POST",
+        url: "api/lighting/colour",
+        data: JSON.stringify({ red: 30, green: 8, blue: 0, white: 0 }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json"
+        //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
+    });
+}
