@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -11,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using PiperPicker.HostedServices;
 using PiperPicker.Hubs;
 using PiperPicker.Proxies;
@@ -36,13 +36,13 @@ namespace PiperPicker
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
-            services.AddMvc()
-                .SetCompatibilityVersion(CompatibilityVersion.Version_2_1)
-                .AddRazorPagesOptions(options =>
-                {
-                    options.Conventions.AddPageRoute("/Control", "/");
-                    options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
-                });
+            services.AddControllers();
+
+            services.AddRazorPages(options =>
+            {
+                options.Conventions.AddPageRoute("/Control", "/");
+                options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
+            });
 
             services.AddSignalR();
 
@@ -52,7 +52,7 @@ namespace PiperPicker
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationLifetime lifetime, IApplicationBuilder app, IHostingEnvironment env)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -67,13 +67,15 @@ namespace PiperPicker
             //app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseCookiePolicy();
+            
+            app.UseRouting();
 
-            app.UseSignalR(routes =>
+            app.UseEndpoints(endpoints =>
             {
-                routes.MapHub<StateHub>("/stateHub");
+                endpoints.MapControllers();
+                endpoints.MapRazorPages();
+                endpoints.MapHub<StateHub>("/stateHub");
             });
-
-            app.UseMvc();
         }
     }
 }

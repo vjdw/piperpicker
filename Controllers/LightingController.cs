@@ -17,21 +17,43 @@ namespace piperpicker.Controllers
         [HttpPost("colour")]
         public async Task<ActionResult> PostColour([FromBody]ColourDto data)
         {
-            await LightingProxy.SetColour(data.red, data.green, data.blue, data.white);
+            await LightingProxy.SetStaticColour(data.Hostname, data.Red, data.Green, data.Blue, data.White);
+            return new JsonResult(new { Result = "ok" });
+        }
+
+        [HttpPost("mode")]
+        public async Task<ActionResult> PostMode([FromBody]ModeDto data)
+        {
+            var mode = (LightingProxy.Mode)Enum.Parse(typeof(LightingProxy.Mode), data.Mode);
+            await LightingProxy.SetMode(data.Hostname, mode);
             return new JsonResult(new { Result = "ok" });
         }
 
         [JsonObject]
-        public class ColourDto
+        public class LightingDto
         {
             [JsonProperty]
-            public int red { get; set; }
+            public string Hostname { get; set; }
+        }
+
+        [JsonObject]
+        public class ColourDto : LightingDto
+        {
             [JsonProperty]
-            public int green { get; set; }
+            public int Red { get; set; }
             [JsonProperty]
-            public int blue { get; set; }
+            public int Green { get; set; }
             [JsonProperty]
-            public int white { get; set; }
+            public int Blue { get; set; }
+            [JsonProperty]
+            public int White { get; set; }
+        }
+
+        [JsonObject]
+        public class ModeDto : LightingDto
+        {
+            [JsonProperty]
+            public string Mode { get; set; }
         }
     }
 }

@@ -15,40 +15,38 @@ namespace PiperPicker.Proxies
 {
     public static class LightingProxy
     {
+        public enum Mode
+        {
+            on, off, schedule
+        }
+
         // TODO: load from config
-        private static readonly string LightingEndpoint = "http://192.168.1.50";
+        private static readonly string BacklightEndpoint = "http://192.168.1.50";
+        private static readonly string AmbilightEndpoint = "http://192.168.1.51";
 
         private static HttpClient _client = new HttpClient();
 
-        public static async Task SetColour(int red, int green, int blue, int white)
+        public static async Task<string> SetStaticColour(string hostname, int r, int g, int b, int w)
         {
-            await LightPost(new ColourDto { R = red, G = green, B = blue, W = white } );
-        }
-
-        private static async Task<string> LightPost(ColourDto colour)
-        {
-            var content =  new FormUrlEncodedContent(new[] {
-                new KeyValuePair<string,string>("R", $"{colour.R}"),
-                new KeyValuePair<string, string>("G", $"{colour.G}"),
-                new KeyValuePair<string, string>("B", $"{colour.B}"),
-                new KeyValuePair<string, string>("W", $"{colour.W}")
-            });
-            var response = await _client.PostAsync($"{LightingEndpoint}/test", content);
+            var response = await _client.PutAsync($"http://{hostname}/state/staticcolour", new StringContent($"{{\"r\":{r}, \"g\":{g}, \"b\":{b}, \"w\":{w}}}"));
             var responseContent = await response.Content.ReadAsStringAsync();
             return responseContent;
         }
 
-        [JsonObject]
-        public class ColourDto
+        public static async Task<string> SetMode(string hostname, Mode mode)
         {
-            [JsonProperty]
-            public int R { get; set; }
-            [JsonProperty]
-            public int G { get; set; }
-            [JsonProperty]
-            public int B { get; set; }
-            [JsonProperty]
-            public int W { get; set; }
+            var content = mode switch
+            {
+                Mode.on => new StringContent("on"),
+                Mode.off => new StringContent("off"),
+                Mode.schedule => new StringContent("schedule"),
+                _ => throw new NotSupportedException()
+            };
+
+
+            var response = await _client.PutAsync($"http://{hostname}/state/mode", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return responseContent;
         }
     }
 }
