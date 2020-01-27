@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
+using PiperPicker.Models;
 using PiperPicker.Pages.Components.NowPlaying;
 using PiperPicker.Pages.Components.SnapClient;
 

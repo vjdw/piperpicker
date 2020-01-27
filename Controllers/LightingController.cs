@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using PiperPicker.Proxies;
 
-namespace piperpicker.Controllers
+namespace PiperPicker.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]

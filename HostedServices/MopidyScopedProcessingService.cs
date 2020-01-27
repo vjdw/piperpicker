@@ -23,6 +23,8 @@ namespace PiperPicker.HostedServices
                 async(object sender, MopidyNotificationEventArgs e) =>
                 {
                     await _hubContext.Clients.All.SendAsync("MopidyNotification", e.GetInfo());
+                    await System.Threading.Tasks.Task.Delay(5000);
+                    await _hubContext.Clients.All.SendAsync("MopidyNotification", e.GetInfo());
                 };
         }
     }
