@@ -1,0 +1,14 @@
+﻿@model RadMacModel
+<div class="row">
+    <div>
+        <ul class="episode-list">
+            @foreach (var item in @Model.Episodes)
+            {
+                <div class="episode-item-container">
+                    <img class="icon episode-play" src="/images/play.svg" onclick="mopidyPlayUri('@item.Uri')" />
+                    <li class="episode-item" onclick="play('@item.Uri')">@item.Name</li>
+                </div>
+            }
+        </ul>
+    </div>
+</div>

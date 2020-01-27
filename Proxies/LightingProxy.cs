@@ -43,7 +43,6 @@ namespace PiperPicker.Proxies
                 _ => throw new NotSupportedException()
             };
 
-
             var response = await _client.PutAsync($"http://{hostname}/state/mode", content);
             var responseContent = await response.Content.ReadAsStringAsync();
             return responseContent;

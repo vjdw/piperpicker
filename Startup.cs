@@ -40,7 +40,7 @@ namespace PiperPicker
 
             services.AddRazorPages(options =>
             {
-                options.Conventions.AddPageRoute("/Control", "/");
+                options.Conventions.AddPageRoute("/Spa", "/");
                 options.Conventions.ConfigureFilter(new IgnoreAntiforgeryTokenAttribute());
             });
 

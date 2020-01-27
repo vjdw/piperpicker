@@ -1,9 +1,8 @@
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PiperPicker.Proxies;
-using SnapProxy = PiperPicker.Proxies.SnapProxy;
 
-namespace PiperPicker.Pages.Components.SnapClient
+namespace PiperPicker.Pages.Components.NowPlaying
 {
     public class NowPlayingViewComponent : ViewComponent
     {
