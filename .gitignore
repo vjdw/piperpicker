@@ -3,3 +3,5 @@ bin/*
 wwwroot/js/site.min.js
 /.vs
 /piperpicker.csproj.user
+/.config
+/Properties/PublishProfiles/FolderProfile.pubxml.user
