@@ -1,0 +1,67 @@
+@model PiperPicker.Models.LightingModel
+
+<script>
+
+    var lighting_targetHostname = "";
+
+    var lighting_colorPicker = new iro.ColorPicker("#color-picker-container", {
+        width: 320,
+        color: "#f00"
+    });
+
+    function lighting_mode(hostname, mode) {
+    $.ajax({
+        type: "POST",
+        url: "api/lighting/mode",
+        data: JSON.stringify({ hostname: hostname, mode: mode }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json"
+        //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
+    });
+}
+
+    function lighting_setTargetHostname(hostname) {
+        lighting_targetHostname = hostname;
+    }
+
+    function lighting_onColorChange(color, changes) {
+        $.ajax({
+            type: "POST",
+            url: "api/lighting/colour",
+            data: JSON.stringify({ hostname: lighting_targetHostname, red: color.rgb.r, green: color.rgb.g, blue: color.rgb.b, white: 0 }),
+            contentType: "application/json; charset=utf-8",
+            dataType: "json"
+            //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
+        });
+    }
+
+    lighting_colorPicker.on("input:end", lighting_onColorChange);
+
+</script>
+
+<div id="color-picker-container"></div>
+
+@foreach (var lightController in @Model.LightControllers)
+{
+    <div class="group-container">
+        <p>@lightController.Hostname</p>
+
+        <div class="icon plus"
+             onclick="lighting_setTargetHostname('@lightController.Hostname')">
+            Colour
+        </div>
+
+        <div class="icon plus"
+             onclick="lighting_mode('@lightController.Hostname', 'off')">
+            Off
+        </div>
+        <div class="icon plus"
+             onclick="lighting_mode('@lightController.Hostname', 'on')">
+            On
+        </div>
+        <div class="icon plus"
+             onclick="lighting_mode('@lightController.Hostname', 'schedule')">
+            Schedule
+        </div>
+    </div>
+}

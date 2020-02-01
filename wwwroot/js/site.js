@@ -48,24 +48,24 @@ function reloadMe(container, viewSource) {
     }, 500);
 }
 
-function lightingColour(hostname) {
-    $.ajax({
-        type: "POST",
-        url: "api/lighting/colour",
-        data: JSON.stringify({ hostname: hostname, red: 10, green: 1, blue: 0, white: 0 }),
-        contentType: "application/json; charset=utf-8",
-        dataType: "json"
-        //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
-    });
-}
+//function lightingColour(hostname, r, g, b) {
+//    $.ajax({
+//        type: "POST",
+//        url: "api/lighting/colour",
+//        data: JSON.stringify({ hostname: hostname, red: r, green: g, blue: b, white: 0 }),
+//        contentType: "application/json; charset=utf-8",
+//        dataType: "json"
+//        //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
+//    });
+//}
 
-function lightingMode(hostname, mode) {
-    $.ajax({
-        type: "POST",
-        url: "api/lighting/mode",
-        data: JSON.stringify({ hostname: hostname, mode: mode }),
-        contentType: "application/json; charset=utf-8",
-        dataType: "json"
-        //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
-    });
-}
+//function lightingMode(hostname, mode) {
+//    $.ajax({
+//        type: "POST",
+//        url: "api/lighting/mode",
+//        data: JSON.stringify({ hostname: hostname, mode: mode }),
+//        contentType: "application/json; charset=utf-8",
+//        dataType: "json"
+//        //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
+//    });
+//}
