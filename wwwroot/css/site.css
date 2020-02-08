@@ -169,6 +169,26 @@ ul {
     background-size: cover;
 }
 
+.icon.light-off {
+    background: url("/images/light-off.svg");
+    background-size: cover;
+}
+
+.icon.light-on {
+    background: url("/images/light-on.svg");
+    background-size: cover;
+}
+
+.icon.light-random {
+    background: url("/images/light-random.svg");
+    background-size: cover;
+}
+
+.icon.light-schedule {
+    background: url("/images/light-schedule.svg");
+    background-size: cover;
+}
+
 .icon.spinner {
     color: transparent;
     background: url("/images/spinner.svg") !important;

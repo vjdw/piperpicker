@@ -17,12 +17,8 @@ namespace PiperPicker.Proxies
     {
         public enum Mode
         {
-            on, off, schedule
+            on, off, random, schedule
         }
-
-        // TODO: load from config
-        private static readonly string BacklightEndpoint = "http://192.168.1.50";
-        private static readonly string AmbilightEndpoint = "http://192.168.1.51";
 
         private static HttpClient _client = new HttpClient();
 
@@ -39,6 +35,7 @@ namespace PiperPicker.Proxies
             {
                 Mode.on => new StringContent("on"),
                 Mode.off => new StringContent("off"),
+                Mode.random => new StringContent("random"),
                 Mode.schedule => new StringContent("schedule"),
                 _ => throw new NotSupportedException()
             };
