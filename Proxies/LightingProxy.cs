@@ -15,12 +15,24 @@ namespace PiperPicker.Proxies
 {
     public static class LightingProxy
     {
+        public class LightStateDto
+        {
+            public Mode Mode { get; set; }
+        }
+
         public enum Mode
         {
             on, off, random, schedule
         }
 
         private static HttpClient _client = new HttpClient();
+
+        public static async Task<LightStateDto> GetState(string hostname)
+        {
+            var response = await _client.GetAsync($"http://{hostname}/state");
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<LightStateDto>(responseContent);
+        }
 
         public static async Task<string> SetStaticColour(string hostname, int r, int g, int b, int w)
         {

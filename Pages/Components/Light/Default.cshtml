@@ -1,8 +1,8 @@
-@model string
+@model PiperPicker.Models.LightModel
 
 <script>
 
-    var lighting_colorPicker = new iro.ColorPicker("#color-picker-container-@Model", {
+    var lighting_colorPicker = new iro.ColorPicker("#color-picker-container-@Model.Hostname", {
         width: 180,
         color: "#333"
     });
@@ -22,7 +22,7 @@
         $.ajax({
             type: "POST",
             url: "api/lighting/colour",
-            data: JSON.stringify({ hostname: '@Model', red: color.rgb.r, green: color.rgb.g, blue: color.rgb.b, white: 0 }),
+            data: JSON.stringify({ hostname: '@Model.Hostname', red: color.rgb.r, green: color.rgb.g, blue: color.rgb.b, white: 0 }),
             contentType: "application/json; charset=utf-8",
             dataType: "json"
             //,success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
@@ -34,21 +34,28 @@
 </script>
 
 <div class="group-container">
-    <p>@Model</p>
+    <p>
+        @Model.Hostname
+    </p>
 
-    <div id="color-picker-container-@Model"></div>
+    <div class="controls-container">
+        <div class="icon light-off @(Model.Mode == "off" ? "active" : "")"
+             onclick="lighting_mode('@Model.Hostname', 'off')">
+        </div>
+        <div class="icon light-on @(Model.Mode == "on" ? "active" : "")"
+             onclick="lighting_mode('@Model.Hostname', 'on')">
+        </div>
+        <div class="icon light-random @(Model.Mode == "random" ? "active" : "")"
+             onclick="lighting_mode('@Model.Hostname', 'random')">
+        </div>
+        <div class="icon light-schedule @(Model.Mode == "schedule" ? "active" : "")"
+             onclick="lighting_mode('@Model.Hostname', 'schedule')">
+        </div>
+    </div>
 
-    <div class="icon light-off"
-         onclick="lighting_mode('@Model', 'off')">
-    </div>
-    <div class="icon light-on"
-         onclick="lighting_mode('@Model', 'on')">
-    </div>
-    <div class="icon light-random"
-         onclick="lighting_mode('@Model', 'random')">
-    </div>
-    <div class="icon light-schedule"
-         onclick="lighting_mode('@Model', 'schedule')">
-    </div>
+    @if (Model.Mode == "on")
+    {
+    <div id="color-picker-container-@Model.Hostname"></div>
+    }
 </div>
 

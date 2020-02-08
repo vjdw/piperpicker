@@ -15,7 +15,15 @@ namespace PiperPicker.Pages.Components.Light
 
         public async Task<IViewComponentResult> InvokeAsync(string hostname)
         {
-            return View("Default", hostname);
+            var state = await LightingProxy.GetState(hostname);
+
+            var model = new LightModel
+            {
+                Hostname = hostname,
+                Mode = state.Mode.ToString()
+            };
+
+            return View("Default", model);
         }
     }
 }
