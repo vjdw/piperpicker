@@ -76,15 +76,14 @@ namespace PiperPicker.Proxies
                     bool lockTaken = false;
                     try
                     {
-                        System.Threading.Monitor.TryEnter(_clientReadLock, 1000, ref lockTaken);
+                        Monitor.TryEnter(_clientReadLock, 1000, ref lockTaken);
                         if (lockTaken)
                         {
                             if (_stream.DataAvailable)
                             {
                                 int bytesRead = _stream.Read(bytesToRead, 0, readBufferSize);
                                 var response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
-                                if (OnSnapNotification != null)
-                                    OnSnapNotification(null, new SnapNotificationEventArgs(response));
+                                OnSnapNotification?.Invoke(null, new SnapNotificationEventArgs(response));
                             }
                         }
                     }

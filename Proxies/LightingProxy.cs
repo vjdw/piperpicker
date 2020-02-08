@@ -13,17 +13,24 @@ using Newtonsoft.Json.Linq;
 
 namespace PiperPicker.Proxies
 {
+    public delegate void LightingNotificationEventHandler(object source, LightingNotificationEventArgs e);
+
+    public class LightingNotificationEventArgs : EventArgs
+    {
+        private string EventInfo;
+        public LightingNotificationEventArgs(string notification)
+        {
+            EventInfo = notification;
+        }
+        public string GetInfo()
+        {
+            return EventInfo;
+        }
+    }
+
     public static class LightingProxy
     {
-        public class LightStateDto
-        {
-            public Mode Mode { get; set; }
-        }
-
-        public enum Mode
-        {
-            on, off, random, schedule
-        }
+        public static event LightingNotificationEventHandler OnLightingNotification;
 
         private static HttpClient _client = new HttpClient();
 
@@ -54,7 +61,33 @@ namespace PiperPicker.Proxies
 
             var response = await _client.PutAsync($"http://{hostname}/state/mode", content);
             var responseContent = await response.Content.ReadAsStringAsync();
+
+            OnLightingNotification?.Invoke(null, new LightingNotificationEventArgs(hostname));
+
             return responseContent;
+        }
+
+        public class LightStateDto
+        {
+            public Mode Mode { get; set; }
+            public string StaticColour { get; set; }
+
+            public string StaticColourHexCode
+            {
+                get
+                {
+                    var parts = StaticColour.TrimStart('(').TrimEnd(')').Split(',');
+                    var r = int.Parse(parts[0]);
+                    var g = int.Parse(parts[1]);
+                    var b = int.Parse(parts[2]);
+                    return $"#{r:X2}{g:X2}{b:X2}";
+                }
+            }
+        }
+
+        public enum Mode
+        {
+            on, off, random, schedule
         }
     }
 }

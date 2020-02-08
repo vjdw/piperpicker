@@ -8,5 +8,6 @@ namespace PiperPicker.Models
     {
         public string Hostname { get; set; }
         public string Mode { get; set; }
+        public string StaticColourHexCode { get; set; }
     }
 }

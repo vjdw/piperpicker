@@ -20,7 +20,8 @@ namespace PiperPicker.Pages.Components.Light
             var model = new LightModel
             {
                 Hostname = hostname,
-                Mode = state.Mode.ToString()
+                Mode = state.Mode.ToString(),
+                StaticColourHexCode = state.StaticColourHexCode
             };
 
             return View("Default", model);

@@ -20,6 +20,9 @@
         hubConnection.on("SnapNotification", function (message) {
             document.getElementById('refreshSnapClientsLinkId').click();
         });
+        hubConnection.on("LightingNotification", function (message) {
+            document.getElementById('refreshLightsLinkId').click();
+        });
         hubConnection.on("MopidyNotification", function (message) {
             document.getElementById('refreshNowPlayingLinkId').click();
         });
@@ -49,7 +52,9 @@
             </ul>
         </div>
 
-        <a id="refreshSnapClientsLinkId" href="" data-ajax="true" data-ajax-url="spa/?handler=SnapClientsView" data-ajax-update="#snapcast-container"></a>
+        @*<a id="refreshSnapClientsLinkId" href="" data-ajax="true" data-ajax-url="spa/?handler=SnapClientsView" data-ajax-update="#snapcast-container"></a>*@
+        <a id="refreshSnapClientsLinkId" href="" data-ajax="true" data-ajax-url="spa/?handler=SnapClientsView" data-ajax-update="#panel"></a>
+        <a id="refreshLightsLinkId" href="" data-ajax="true" data-ajax-url="spa/?handler=LightingView" data-ajax-update="#panel"></a>
 
         <a id="initialiseNowPlayingLinkId" href="" data-ajax="true" data-ajax-url="spa/?handler=NowPlayingView" data-ajax-update="#now-playing-container"></a>
         <a id="refreshNowPlayingLinkId" href="" data-ajax="true" data-ajax-url="spa/?handler=NowPlayingView" data-ajax-update="#group-container"></a>

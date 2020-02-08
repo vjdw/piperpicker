@@ -4,7 +4,8 @@
 
     var lighting_colorPicker = new iro.ColorPicker("#color-picker-container-@Model.Hostname", {
         width: 180,
-        color: "#333"
+        color: "@Model.StaticColourHexCode",
+        wheelLightness: false
     });
 
     function lighting_mode(hostname, mode) {

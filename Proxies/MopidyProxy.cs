@@ -108,8 +108,7 @@ namespace PiperPicker.Proxies
 
         private static void RaiseEvent(string info)
         {
-            if (OnMopidyNotification != null)
-                OnMopidyNotification(null, new MopidyNotificationEventArgs("playepisode"));
+            OnMopidyNotification?.Invoke(null, new MopidyNotificationEventArgs("playepisode"));
         }
 
         [JsonObject]

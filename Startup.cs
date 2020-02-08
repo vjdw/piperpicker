@@ -48,6 +48,7 @@ namespace PiperPicker
 
             services.AddHostedService<HostedServiceRunner>();
             services.AddScoped<SnapScopedProcessingService>();
+            services.AddScoped<LightingScopedProcessingService>();
             services.AddScoped<MopidyScopedProcessingService>();
         }
 
