@@ -4,8 +4,6 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PiperPicker.Models;
 using PiperPicker.Proxies;
-using static PiperPicker.Models.LightingModel;
-using static PiperPicker.Proxies.LightingProxy;
 
 namespace PiperPicker.Pages.Components.Light
 {

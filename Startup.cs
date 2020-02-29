@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using LiteDB;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -50,6 +51,9 @@ namespace PiperPicker
             services.AddScoped<SnapScopedProcessingService>();
             services.AddScoped<LightingScopedProcessingService>();
             services.AddScoped<MopidyScopedProcessingService>();
+
+            var database = new LiteDatabase(@"MyData.db");
+            services.AddSingleton<ILiteDatabase>(database);
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

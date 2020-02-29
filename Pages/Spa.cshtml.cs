@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using PiperPicker.Models;
+using PiperPicker.Pages.Components.Light;
 using PiperPicker.Pages.Components.Lighting;
 using PiperPicker.Pages.Components.NowPlaying;
 using PiperPicker.Pages.Components.SnapClient;
@@ -54,13 +55,9 @@ namespace PiperPicker.Pages
             return new ViewComponentResult() { ViewComponentName = LightingViewComponent.Name };
         }
 
-        // xyzzy remove LightingPartial stuff
-        public IActionResult OnGetLightingPartial()
+        public IActionResult OnGetSettingsView()
         {
-            return new PartialViewResult
-            {
-                ViewName = "_LightingPartial"
-            };
+            return new ViewComponentResult() { ViewComponentName = SettingsViewComponent.Name };
         }
     }
 }

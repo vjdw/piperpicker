@@ -5,3 +5,4 @@ wwwroot/js/site.min.js
 /piperpicker.csproj.user
 /.config
 /Properties/PublishProfiles/FolderProfile.pubxml.user
+*.db

@@ -1,0 +1,22 @@
+@model PiperPicker.Models.SettingsModel
+
+<form method="post" data-ajax="true" data-ajax-url="api/settings/lightcontroller-add" data-ajax-update="#panel" data-ajax-method="post">
+    Hostname: <input type="text" name="hostname" />
+    <input type="submit" value="Add" />
+</form>
+
+<div class="group-container">
+
+    @foreach (var hostname in Model.LightingHostnames)
+    {
+        <div class="controls-container">
+            <span>@hostname</span>
+            <form method="post" data-ajax="true" data-ajax-url="api/settings/lightcontroller-remove" data-ajax-update="#panel" data-ajax-method="post">
+                <input hidden type="text" name="hostname" value="@hostname" />
+                <input type="submit" value="Delete" />
+            </form>
+        </div>
+        <br>
+    }
+
+</div>
