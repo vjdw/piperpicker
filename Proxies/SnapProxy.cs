@@ -97,9 +97,9 @@ namespace PiperPicker.Proxies
                 {
                     Thread.Sleep(60000);
 
-                    lock(_clientReadLock)
+                    lock (_clientReadLock)
                     {
-                        lock(_clientWriteLock)
+                        lock (_clientWriteLock)
                         {
                             try { _stream.Dispose(); }
                             catch { }
@@ -122,23 +122,40 @@ namespace PiperPicker.Proxies
         public static IEnumerable<SnapClient> GetSnapClients()
         {
             var request = BuildSnapRequest("Server.GetStatus");
-            string responseJson = SendSnapRequest(request, waitForResponse : true);
+            string responseJson = SendSnapRequest(request, waitForResponse: true);
             var response = JObject.Parse(responseJson);
 
-            var groups = (JArray) response["result"]["server"]["groups"];
+            var groups = (JArray)response["result"]["server"]["groups"];
             try
             {
-                var snapclients = groups.SelectMany(group =>
-                    ((JArray) group["clients"]).Select(client =>
-                        new SnapClient()
-                        {
-                            Host = client["host"].Value<string>("name"),
-                                Mac = client["host"].Value<string>("mac"),
-                                Muted = client["config"]["volume"].Value<bool>("muted"),
-                                Volume = client["config"]["volume"].Value<int>("percent")
-                        }));
+                var snapclients = groups
+                    .SelectMany(group =>
+                        ((JArray)group["clients"]).Select(client =>
+                           new SnapClient()
+                           {
+                               Host = client["host"].Value<string>("name"),
+                               Mac = client["host"].Value<string>("mac"),
+                               Muted = client["config"]["volume"].Value<bool>("muted"),
+                               Volume = client["config"]["volume"].Value<int>("percent")
+                           }))
+                    .Where(_ => _.Host != "localhost")
+                    .ToList();
 
-                return snapclients.OrderBy(_ => _.Host);
+                foreach (var snapclient in snapclients)
+                {
+                    snapclient.DisplayName = snapclient.Host switch
+                    {
+                        "dinkpad" => "Vin's Laptop",
+                        "frapefruit" => "Study",
+                        "gopi" => "Portable",
+                        "hunchcorn" => "Living Room",
+                        "piper" => "Kitchen",
+                        "sittingroom" => "Sitting Room",
+                        _ => null
+                    };
+                }
+
+                return snapclients.OrderBy(_ => _.DisplayName);
             }
             catch (Exception ex)
             {
@@ -149,12 +166,12 @@ namespace PiperPicker.Proxies
         public static bool TryGetSnapClient(string clientMac, out SnapClient snapclient)
         {
             var request = BuildSnapRequest("Client.GetStatus", new { id = clientMac });
-            string responseJson = SendSnapRequest(request, waitForResponse : true);
+            string responseJson = SendSnapRequest(request, waitForResponse: true);
             var response = JObject.Parse(responseJson);
 
-            if (response.ContainsKey("result") && ((JObject) response["result"]).ContainsKey("client"))
+            if (response.ContainsKey("result") && ((JObject)response["result"]).ContainsKey("client"))
             {
-                var client = (JObject) response["result"]["client"];
+                var client = (JObject)response["result"]["client"];
                 snapclient = new SnapClient()
                 {
                     Host = client["host"].Value<string>("name"),
@@ -177,9 +194,9 @@ namespace PiperPicker.Proxies
 
         public static void SetVolume(string clientMac, int percentagePointChange)
         {
-            lock(_clientReadLock)
+            lock (_clientReadLock)
             {
-                lock(_clientWriteLock)
+                lock (_clientWriteLock)
                 {
                     if (TryGetSnapClient(clientMac, out var client))
                     {
@@ -195,19 +212,19 @@ namespace PiperPicker.Proxies
         {
             dynamic requestObj = new
             {
-            id = Guid.NewGuid().ToString("N"),
-            jsonrpc = "2.0",
-            method = method,
-            @params = @params ?? new { }
+                id = Guid.NewGuid().ToString("N"),
+                jsonrpc = "2.0",
+                method = method,
+                @params = @params ?? new { }
             };
             return requestObj;
         }
 
         private static string SendSnapRequest(dynamic requestObj, bool waitForResponse = false)
         {
-            lock(_clientReadLock)
+            lock (_clientReadLock)
             {
-                lock(_clientWriteLock)
+                lock (_clientWriteLock)
                 {
                     string requestId = requestObj.id;
 
@@ -245,6 +262,20 @@ namespace PiperPicker.Proxies
         {
             [JsonProperty]
             public string Host { get; set; }
+
+            private string _displayName = null;
+            [JsonProperty]
+            public string DisplayName
+            {
+                get
+                {
+                    return _displayName ?? Host;
+                }
+                set
+                {
+                    _displayName = value;
+                }
+            }
 
             [JsonProperty]
             public string Mac { get; set; }

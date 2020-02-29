@@ -38,14 +38,26 @@ $green:     #859900;
     background-color: #b58900;
 }
 
+    .navbar .container {
+        max-width: 40em;
+        margin-left: auto;
+        margin-right:auto;
+        display: flex;
+        justify-content: space-evenly;
+    }
+
+.nav-item-container {
+    flex-flow: column;
+}
+
 .navbar-brand,
-.navbar-nav>li>a {
+.navbar-nav > li > a {
     color: #073642 !important;
 }
 
-.navbar-nav>li>a:hover {
-    color: #eee8d5 !important;
-}
+    .navbar-nav > li > a:hover {
+        color: #eee8d5 !important;
+    }
 
 .navbar-toggle .icon-bar {
     background-color: #073642 !important;
@@ -56,39 +68,24 @@ $green:     #859900;
     border-color: #073642 !important;
 }
 
-.navbar-toggle:hover,
-.navbar-toggle:focus {
-    background-color: #fdf6e3 !important;
-}
+    .navbar-toggle:hover,
+    .navbar-toggle:focus {
+        background-color: #fdf6e3 !important;
+    }
 
-.navbar-toggle.navbar-left {
-    float: left !important;
-    margin-left: 10px !important;
-}
+    .navbar-toggle.navbar-left {
+        float: left !important;
+        margin-left: 10px !important;
+    }
 
-.navbar-nav>li>a:hover,
-.navbar-nav>li>a:focus {
+.navbar-nav > li > a:hover,
+.navbar-nav > li > a:focus {
     background-color: #eee8d5 !important;
     color: #657b83 !important;
 }
 
-.active-page {
+.active {
     box-shadow: 0px 1px 7px 1px #00000080;
-}
-
-.icon {
-    width: 3em;
-    height: 3em;
-    margin: 1em;
-    transition: all .15s ease-in-out;
-}
-
-.icon:hover {
-    transform: scale(1.1);
-}
-
-.icon:active {
-    transform: scale(0.9);
 }
 
 ul {
@@ -124,9 +121,9 @@ ul {
     align-self: center;
 }
 
-.episode-item:hover {
-    cursor: pointer;
-}
+    .episode-item:hover {
+        cursor: pointer;
+    }
 
 .title-container {
     display: flex;
@@ -137,74 +134,113 @@ ul {
     width: 3em;
     height: 3em;
     margin: 1.5em;
+    transition: all .15s ease-in-out;
 }
 
-.icon.mute-on {
-    background: url("/images/mute-on.svg");
-    background-size: cover;
-}
+    .icon:hover {
+        transform: scale(1.1);
+    }
 
-.icon.mute-off {
-    background: url("/images/mute-off.svg");
-    background-size: cover;
-}
+    .icon:active {
+        transform: scale(0.9);
+    }
 
-.icon.playpause.play {
-    background: url("/images/play.svg");
-    background-size: cover;
-}
+    .icon.control {
+        background: url("/images/menu-item-control.svg");
+        background-size: cover;
+    }
 
-.icon.plus {
-    background: url("/images/plus.svg");
-    background-size: cover;
-}
+    .icon.playlist {
+        background: url("/images/menu-item-playlist.svg");
+        background-size: cover;
+    }
 
-.icon.minus {
-    background: url("/images/minus.svg");
-    background-size: cover;
-}
+    .icon.radio {
+        background: url("/images/menu-item-radio.svg");
+        background-size: cover;
+    }
 
-.icon.playpause.pause {
-    background: url("/images/pause.svg");
-    background-size: cover;
-}
+    .icon.lighting {
+        background: url("/images/menu-item-lighting.svg");
+        background-size: cover;
+    }
 
-.icon.light-off {
-    background: url("/images/light-off.svg");
-    background-size: cover;
-}
+    .icon.settings {
+        background: url("/images/menu-item-settings.svg");
+        background-size: cover;
+    }
 
-.icon.light-on {
-    background: url("/images/light-on.svg");
-    background-size: cover;
-}
+    .icon.mute-on {
+        background: url("/images/mute-on.svg");
+        background-size: cover;
+    }
 
-.icon.light-random {
-    background: url("/images/light-random.svg");
-    background-size: cover;
-}
+    .icon.mute-off {
+        background: url("/images/mute-off.svg");
+        background-size: cover;
+    }
 
-.icon.light-schedule {
-    background: url("/images/light-schedule.svg");
-    background-size: cover;
-}
+    .icon.playpause.play {
+        background: url("/images/play.svg");
+        background-size: cover;
+    }
 
-.icon.spinner {
-    color: transparent;
-    background: url("/images/spinner.svg") !important;
-    background-size: cover !important;
-    animation-name: spin;
-    animation-duration: 350ms;
-    animation-iteration-count: infinite;
-    animation-timing-function: steps(8);
-}
+    .icon.plus {
+        background: url("/images/plus.svg");
+        background-size: cover;
+    }
+
+    .icon.minus {
+        background: url("/images/minus.svg");
+        background-size: cover;
+    }
+
+    .icon.playpause.pause {
+        background: url("/images/pause.svg");
+        background-size: cover;
+    }
+
+    .icon.light-off {
+        background: url("/images/light-off.svg");
+        background-size: cover;
+    }
+
+    .icon.light-on {
+        background: url("/images/light-on.svg");
+        background-size: cover;
+    }
+
+    .icon.light-random {
+        background: url("/images/light-random.svg");
+        background-size: cover;
+    }
+
+    .icon.light-schedule {
+        background: url("/images/light-schedule.svg");
+        background-size: cover;
+    }
+
+    .icon.spinner {
+        color: transparent;
+        background: url("/images/spinner.svg") !important;
+        background-size: cover !important;
+        animation-name: spin;
+        animation-duration: 350ms;
+        animation-iteration-count: infinite;
+        animation-timing-function: steps(8);
+    }
+
+    .icon.nav-item {
+        margin: 0.5em;
+    }
 
 @keyframes spin {
     from {
-        transform:rotate(0deg);
+        transform: rotate(0deg);
     }
+
     to {
-        transform:rotate(360deg);
+        transform: rotate(360deg);
     }
 }
 
@@ -235,8 +271,7 @@ ul {
 /* Please see documentation at https://docs.microsoft.com/aspnet/core/client-side/bundling-and-minification 
 for details on configuring this project to bundle and minify static web assets. */
 body {
-    padding-top: 50px;
-    padding-bottom: 20px;
+    margin: 0;
     background-color: #fdf6e3;
     color: #657b83;
 }
@@ -244,8 +279,6 @@ body {
 /* Wrapping element */
 /* Set some basic padding to keep content from hitting the edges */
 .body-content {
-    padding-left: 15px;
-    padding-right: 15px;
 }
 
 /* Carousel */
@@ -265,10 +298,11 @@ body {
 }
 
 /* Hide/rearrange for smaller screens */
-@media screen and (max-width: 767px) {
+@media screen and (max-width: 400px) {
 
-    /* Hide captions */
-    .carousel-caption {
-        display: none;
+    .icon {
+        width: 2em;
+        height: 2em;
+        margin: 1.2em;
     }
 }

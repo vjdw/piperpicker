@@ -46,16 +46,16 @@ else
     </p>
 
     <div class="controls-container">
-        <div class="icon light-off @(Model.Mode == "off" ? "active" : "")"
+        <div class="icon light-off @(Model.Mode == "off" ? "selected" : "")"
              onclick="lighting_mode('@Model.Hostname', 'off')">
         </div>
-        <div class="icon light-on @(Model.Mode == "on" ? "active" : "")"
+        <div class="icon light-on @(Model.Mode == "on" ? "selected" : "")"
              onclick="lighting_mode('@Model.Hostname', 'on')">
         </div>
-        <div class="icon light-random @(Model.Mode == "random" ? "active" : "")"
+        <div class="icon light-random @(Model.Mode == "random" ? "selected" : "")"
              onclick="lighting_mode('@Model.Hostname', 'random')">
         </div>
-        <div class="icon light-schedule @(Model.Mode == "schedule" ? "active" : "")"
+        <div class="icon light-schedule @(Model.Mode == "schedule" ? "selected" : "")"
              onclick="lighting_mode('@Model.Hostname', 'schedule')">
         </div>
     </div>
