@@ -9,7 +9,12 @@
 @section Scripts {
     <script>
 
+        var activePage = "";
+
         function hideShowForPartial(activePartial) {
+
+            activePage = activePartial.replace("navitem-", "");
+
             if (activePartial === "navitem-control") {
                 document.getElementById('linkid-refreshsnapclients').click();
             }
@@ -23,10 +28,12 @@
         var hubConnection = new signalR.HubConnectionBuilder().withUrl("/stateHub").build();
         hubConnection.start();
         hubConnection.on("SnapNotification", function (message) {
-            document.getElementById('linkid-refreshsnapclients').click();
+            if (activePage === "control")
+                document.getElementById('linkid-refreshsnapclients').click();
         });
         hubConnection.on("LightingNotification", function (message) {
-            document.getElementById('linkid-refreshlights').click();
+            if (activePage === "lighting")
+                document.getElementById('linkid-refreshlights').click();
         });
         hubConnection.on("MopidyNotification", function (message) {
             document.getElementById('linkid-refreshnowplaying').click();
@@ -40,7 +47,7 @@
 
 <nav class="navbar">
     <div class="container">
-        <a id="linkid-control" class="nav-item-container" href="" data-ajax="true" data-ajax-url="spa/?handler=SnapCastPartial" data-ajax-update="#panel" data-ajax-success="hideShowForPartial('navitem-control')">
+        <a id="linkid-control" class="nav-item-container" href="" data-ajax="true" data-ajax-url="spa/?handler=SnapClientsView" data-ajax-update="#panel" data-ajax-success="hideShowForPartial('navitem-control')">
             <div id="navitem-control" class="nav-item icon control"></div>
         </a>
         <a class="nav-item-container" href="" data-ajax="true" data-ajax-url="spa/?handler=RadioPartial" data-ajax-update="#panel" data-ajax-success="hideShowForPartial('navitem-radio')">
@@ -59,13 +66,12 @@
 </nav>
 
 <div class="row">
-    <div id="now-playing-container"></div>
+    <div id="now-playing-panel"></div>
     <div id="panel"></div>
 </div>
 
-@*<a id="linkid-refreshsnapclients" href="" data-ajax="true" data-ajax-url="spa/?handler=SnapClientsView" data-ajax-update="#snapcast-container"></a>*@
 <a id="linkid-refreshsnapclients" href="" data-ajax="true" data-ajax-url="spa/?handler=SnapClientsView" data-ajax-update="#panel"></a>
 <a id="linkid-refreshlights" href="" data-ajax="true" data-ajax-url="spa/?handler=LightingView" data-ajax-update="#panel"></a>
 
-<a id="linkid-initialisenowplaying" href="" data-ajax="true" data-ajax-url="spa/?handler=NowPlayingView" data-ajax-update="#now-playing-container"></a>
-<a id="linkid-refreshnowplaying" href="" data-ajax="true" data-ajax-url="spa/?handler=NowPlayingView" data-ajax-update="#group-container"></a>
+<a id="linkid-initialisenowplaying" href="" data-ajax="true" data-ajax-url="spa/?handler=NowPlayingView" data-ajax-update="#now-playing-panel"></a>
+<a id="linkid-refreshnowplaying" href="" data-ajax="true" data-ajax-url="spa/?handler=NowPlayingView" data-ajax-update="#now-playing-container"></a>
