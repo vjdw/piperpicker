@@ -34,6 +34,12 @@
 
 </script>
 
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+<p>@Model.Hostname: @Model.Error</p>
+}
+else
+{
 <div class="group-container">
     <p>
         @Model.Hostname
@@ -59,4 +65,4 @@
     <div id="color-picker-container-@Model.Hostname"></div>
     }
 </div>
-
+}

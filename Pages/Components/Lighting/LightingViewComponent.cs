@@ -18,7 +18,7 @@ namespace PiperPicker.Pages.Components.Lighting
             var lightingModel = new LightingModel
             {
                 LightControllers = new [] {
-                    new LightControllerModel { Hostname = "backlight" },
+                    new LightControllerModel { Hostname = "192.168.1.52" },
                     new LightControllerModel { Hostname = "ambilight" }
                 }
             };

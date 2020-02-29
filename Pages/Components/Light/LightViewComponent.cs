@@ -1,9 +1,11 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using PiperPicker.Models;
 using PiperPicker.Proxies;
 using static PiperPicker.Models.LightingModel;
+using static PiperPicker.Proxies.LightingProxy;
 
 namespace PiperPicker.Pages.Components.Light
 {
@@ -15,14 +17,21 @@ namespace PiperPicker.Pages.Components.Light
 
         public async Task<IViewComponentResult> InvokeAsync(string hostname)
         {
-            var state = await LightingProxy.GetState(hostname);
-
             var model = new LightModel
             {
                 Hostname = hostname,
-                Mode = state.Mode.ToString(),
-                StaticColourHexCode = state.StaticColourHexCode
             };
+
+            try
+            {
+                var state = await LightingProxy.GetState(hostname);
+                model.Mode = state.Mode.ToString();
+                model.StaticColourHexCode = state.StaticColourHexCode;
+            }
+            catch (Exception e)
+            {
+                model.Error = e.Message;
+            }
 
             return View("Default", model);
         }
