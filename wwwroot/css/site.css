@@ -88,6 +88,11 @@ $green:     #859900;
     box-shadow: 0px 1px 7px 1px #00000080;
 }
 
+#panel {
+    overflow-y: auto;
+    max-height: calc(100vh - 10em);
+}
+
 ul {
     list-style-type: none;
     margin: 0;
@@ -96,6 +101,11 @@ ul {
 
 .group-container {
     background-color: #eee8d5;
+}
+
+.group-container-title {
+    text-align: center;
+    padding-top: 1em;
 }
 
 .controls-container {
@@ -135,6 +145,7 @@ ul {
     height: 3em;
     margin: 1.5em;
     transition: all .15s ease-in-out;
+    background-repeat: no-repeat !important;
 }
 
     .icon:hover {
@@ -233,6 +244,12 @@ ul {
     .icon.nav-item {
         margin: 0.5em;
     }
+
+.panel-icon {
+    border: solid;
+    border-color: transparent;
+    border-width: 0.5em;
+}
 
 @keyframes spin {
     from {

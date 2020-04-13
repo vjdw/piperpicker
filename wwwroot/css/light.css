@@ -1,4 +1,7 @@
 .selected {
-    background-color: red;
-    transform: scale(2);
+    box-shadow: 0 3px 0 0 #268bd2;
+}
+
+.IroColorPicker {
+    margin: auto;
 }
