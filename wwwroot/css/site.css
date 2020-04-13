@@ -90,7 +90,7 @@ $green:     #859900;
 
 #panel {
     overflow-y: auto;
-    max-height: calc(100vh - 10em);
+    max-height: calc(100vh - 11em);
 }
 
 ul {
@@ -114,12 +114,19 @@ ul {
 }
 
 .nowplaying-track-container {
+    position: relative;
+    bottom: 0.8em;
     display: flex;
     justify-content: center;
 }
 
 .nowplaying-name {
+    white-space: pre;
     color: #268bd2;
+}
+
+#now-playing-container {
+    height: 7em;
 }
 
 .episode-item-container {
@@ -326,5 +333,17 @@ body {
 
     .current-volume {
         padding-top: 0.4em;
+    }
+
+    #now-playing-container {
+        height: 5em;
+    }
+
+    .nowplaying-track-container {
+        bottom: 0.2em;
+    }
+
+    #panel {
+        max-height: calc(100vh - 8em);
     }
 }
