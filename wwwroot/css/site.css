@@ -321,6 +321,10 @@ body {
     .icon {
         width: 2em;
         height: 2em;
-        margin: 1.2em;
+        margin: 0.8em;
+    }
+
+    .current-volume {
+        padding-top: 0.4em;
     }
 }
