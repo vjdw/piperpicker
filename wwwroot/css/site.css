@@ -249,6 +249,7 @@ ul {
     border: solid;
     border-color: transparent;
     border-width: 0.5em;
+    border-radius: 50%;
 }
 
 @keyframes spin {
