@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
+using PiperPicker.Pages.Components.Light;
 using PiperPicker.Proxies;
 
 namespace PiperPicker.Controllers
@@ -40,7 +41,7 @@ namespace PiperPicker.Controllers
             {
                 var colour = Color.FromArgb((int)wrgbHex);
                 await LightingProxy.AddScheduleItem(data.Hostname, data.Hour, data.Minute, colour.R, colour.G, colour.B, colour.A);
-                return new JsonResult(new { Result = "ok" });
+                return new ViewComponentResult() { ViewComponentName = SettingsViewComponent.Name };
             }
 
             return new BadRequestResult();
@@ -50,7 +51,7 @@ namespace PiperPicker.Controllers
         public async Task<ActionResult> ScheduleItemRemove([FromForm]ScheduleItemDto data)
         {
             await LightingProxy.DeleteScheduleItem(data.Hostname, data.Hour, data.Minute);
-            return new JsonResult(new { Result = "ok" });
+            return new ViewComponentResult() { ViewComponentName = SettingsViewComponent.Name };
         }
 
         [JsonObject]

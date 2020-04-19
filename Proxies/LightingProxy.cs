@@ -85,6 +85,12 @@ namespace PiperPicker.Proxies
 
         public class LightStateDto
         {
+            public LightStateDto()
+            {
+                Schedule = new List<ScheduleItem>();
+                Mode = Mode.off;
+            }
+
             public Mode Mode { get; set; }
             public string StaticColour { get; set; }
 

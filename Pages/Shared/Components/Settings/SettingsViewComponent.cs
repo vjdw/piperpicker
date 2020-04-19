@@ -28,12 +28,23 @@ namespace PiperPicker.Pages.Components.Light
             var lightSettings = await Task.WhenAll(dbLights
                     .ToEnumerable()
                     .Select(async _ =>
-                        new LightSetting
+                    {
+                        var lightSetting = new LightSetting
                         {
                             Hostname = _.Hostname,
-                            State = await LightingProxy.GetState(_.Hostname)
+                        };
+
+                        try
+                        {
+                            lightSetting.State = await LightingProxy.GetState(_.Hostname);
                         }
-                    ));
+                        catch
+                        {
+                            lightSetting.State = new LightingProxy.LightStateDto();
+                        }
+
+                        return lightSetting;
+                    }));
 
             var model = new SettingsModel
             {
