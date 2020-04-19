@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -29,6 +30,29 @@ namespace PiperPicker.Controllers
             return new JsonResult(new { Result = "ok" });
         }
 
+
+        [HttpPost("scheduleitem-add")]
+        public async Task<ActionResult> ScheduleItemAdd([FromForm]ScheduleItemDto data)
+        {
+            data.Wrgb = data.Wrgb.Trim('#');
+
+            if (Int32.TryParse(data.Wrgb.Trim('#'), System.Globalization.NumberStyles.HexNumber, null, out int wrgbHex))
+            {
+                var colour = Color.FromArgb((int)wrgbHex);
+                await LightingProxy.AddScheduleItem(data.Hostname, data.Hour, data.Minute, colour.R, colour.G, colour.B, colour.A);
+                return new JsonResult(new { Result = "ok" });
+            }
+
+            return new BadRequestResult();
+        }
+
+        [HttpPost("scheduleitem-remove")]
+        public async Task<ActionResult> ScheduleItemRemove([FromForm]ScheduleItemDto data)
+        {
+            await LightingProxy.DeleteScheduleItem(data.Hostname, data.Hour, data.Minute);
+            return new JsonResult(new { Result = "ok" });
+        }
+
         [JsonObject]
         public class LightingDto
         {
@@ -54,6 +78,17 @@ namespace PiperPicker.Controllers
         {
             [JsonProperty]
             public string Mode { get; set; }
+        }
+
+        [JsonObject]
+        public class ScheduleItemDto : LightingDto
+        {
+            [JsonProperty("wrgb")]
+            public string Wrgb { get; set; }
+            [JsonProperty]
+            public int Hour { get; set; }
+            [JsonProperty]
+            public int Minute { get; set; }
         }
     }
 }

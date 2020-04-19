@@ -7,14 +7,33 @@
 
 <div class="group-container">
 
-    @foreach (var hostname in Model.LightingHostnames)
+    @foreach (var lightSetting in Model.LightSettings)
     {
         <div class="controls-container">
-            <span>@hostname</span>
+            <span>@lightSetting.Hostname</span>
             <form method="post" data-ajax="true" data-ajax-url="api/settings/lightcontroller-remove" data-ajax-update="#panel" data-ajax-method="post">
-                <input hidden type="text" name="hostname" value="@hostname" />
+                <input hidden type="text" name="hostname" value="@lightSetting.Hostname" />
                 <input type="submit" value="Delete" />
             </form>
+            <div class="group-container">
+                @foreach (var scheduleItem in lightSetting.State.Schedule)
+                {
+                    <p>@($"{scheduleItem.hour}:{scheduleItem.minute} r:{scheduleItem.r} g:{scheduleItem.g} b:{scheduleItem.b}")</p>
+                    <form method="post" data-ajax="true" data-ajax-url="api/lighting/scheduleitem-remove" data-ajax-update="#panel" data-ajax-method="post">
+                        <input hidden type="text" name="hostname" value="@lightSetting.Hostname" />
+                        <input hidden type="text" name="hour" value="@scheduleItem.hour" />
+                        <input hidden type="text" name="minute" value="@scheduleItem.minute" />
+                        <input type="submit" value="Delete" />
+                    </form>
+                }
+                <form method="post" data-ajax="true" data-ajax-url="api/lighting/scheduleitem-add" data-ajax-update="#panel" data-ajax-method="post">
+                    <input hidden type="text" name="hostname" value="@lightSetting.Hostname" />
+                    <input type="text" name="hour" value="0" />
+                    <input type="text" name="minute" value="0" />
+                    <input type="text" name="wrgb" value="#000000" />
+                    <input type="submit" value="Add" />
+                </form>
+            </div>
         </div>
         <br>
     }
