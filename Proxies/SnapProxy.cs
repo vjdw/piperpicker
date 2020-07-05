@@ -11,12 +11,16 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PiperPicker.HostedServices;
 using PiperPicker.Hubs;
+using PiperPicker.Utilities;
 
 namespace PiperPicker.Proxies
 {
@@ -37,18 +41,31 @@ namespace PiperPicker.Proxies
 
     public static class SnapProxy
     {
-        // TODO: load from config
-        private static readonly string SnapServerHost = "hunchcorn";
-        private static readonly int SnapServerPort = 1705;
+        private static string SnapServerHost;
+        private static int SnapServerPort;
 
         private static NetworkStream _stream;
         private static readonly object _clientReadLock = new object();
         private static readonly object _clientWriteLock = new object();
 
-        public static event SnapNotificationEventHandler OnSnapNotification;
+        private static Dictionary<string, string> ClientNameMap;
 
-        static SnapProxy()
+        public static event SnapNotificationEventHandler OnSnapNotification;
+        public static IConfiguration Configuration;
+        public static ILogger<SnapScopedProcessingService> Logger;
+
+        public static void Start()
         {
+            Logger.LogInformation($"{nameof(SnapProxy)} starting");
+
+            SnapServerHost = Configuration["SnapcastServer:Hostname"];
+            SnapServerPort = Configuration.GetValue<int>("SnapcastServer:Port");
+
+            ClientNameMap = Configuration
+                .GetSection("SnapcastServer:ClientNameMap")
+                .GetChildren()
+                .ToDictionary(_ => _.Key, _ => _.Value);
+
             var client = new TcpClient();
             try
             {
@@ -109,9 +126,9 @@ namespace PiperPicker.Proxies
                                 client.Connect(SnapServerHost, SnapServerPort);
                                 _stream = client.GetStream();
                             }
-                            catch
+                            catch (Exception ex)
                             {
-                                // TODO: xyzzy / fix logging
+                                Logger.LogError(ex, $"Exception when retrying connection to Snapcast at {SnapServerHost}:{SnapServerPort}");
                             }
                         }
                     }
@@ -139,26 +156,20 @@ namespace PiperPicker.Proxies
                                Volume = client["config"]["volume"].Value<int>("percent")
                            }))
                     .Where(_ => _.Host != "localhost")
+                    .DistinctBy(_ => _.Mac)
                     .ToList();
 
                 foreach (var snapclient in snapclients)
                 {
-                    snapclient.DisplayName = snapclient.Host switch
-                    {
-                        "dinkpad" => "Vin's Laptop",
-                        "frapefruit" => "Study",
-                        "gopi" => "Portable",
-                        "hunchcorn" => "Living Room",
-                        "piper" => "Kitchen",
-                        "sittingroom" => "Sitting Room",
-                        _ => null
-                    };
+                    if (ClientNameMap.ContainsKey(snapclient.Host))
+                        snapclient.DisplayName = ClientNameMap[snapclient.Host];
                 }
 
                 return snapclients.OrderBy(_ => _.DisplayName);
             }
             catch (Exception ex)
             {
+                Logger.LogError(ex, $"Exception when trying to get list of Snapcast clients from {SnapServerHost}:{SnapServerPort}");
                 throw;
             }
         }

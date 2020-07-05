@@ -6,10 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using PiperPicker.HostedServices;
 
 namespace PiperPicker.Proxies
 {
@@ -30,12 +33,18 @@ namespace PiperPicker.Proxies
 
     public static class MopidyProxy
     {
-        // TODO: load from config
-        private static readonly string MopidyEndpoint = "http://hunchcorn:6680/mopidy/rpc";
-
+        private static string MopidyEndpoint;
         private static HttpClient _client = new HttpClient();
 
         public static event MopidyNotificationEventHandler OnMopidyNotification;
+        public static IConfiguration Configuration;
+        public static ILogger<MopidyScopedProcessingService> Logger;
+
+        public static void Start()
+        {
+            Logger.LogInformation($"{nameof(MopidyProxy)} starting");
+            MopidyEndpoint = Configuration["Mopidy:Endpoint"];
+        }
 
         public static async Task<StateDto> GetState()
         {

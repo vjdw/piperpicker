@@ -19,6 +19,10 @@ namespace PiperPicker
 
         public static IWebHostBuilder CreateWebHostBuilder(string[] args) => 
             WebHost.CreateDefaultBuilder(args)
+                .ConfigureLogging(logging =>
+                {
+                    logging.AddConsole();
+                })
                 .UseUrls("http://0.0.0.0:5002/")
                 .UseStartup<Startup>();
     }
