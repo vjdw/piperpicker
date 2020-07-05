@@ -2,14 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Newtonsoft;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using PiperPicker.HostedServices;
@@ -67,7 +62,7 @@ namespace PiperPicker.Proxies
 
         public static async Task<IList<MopidyItem>> GetEpisodes()
         {
-            var responseContent = await MopidyPost("core.library.browse", "file:///media/data/get-iplayer-downloads");
+            var responseContent = await MopidyPost("core.library.browse", Configuration["Mopidy:EpisodeList:Path"]);
             var mopidyItems = JsonConvert.DeserializeObject<MopidyItems>(responseContent);
             return mopidyItems.Result;
         }

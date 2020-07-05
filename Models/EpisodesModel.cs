@@ -11,18 +11,18 @@ using static PiperPicker.Proxies.MopidyProxy;
 namespace PiperPicker.Models
 {
     [BindProperties]
-    public class RadMacModel : PageModel
+    public class EpisodesModel : PageModel
     {
         HttpClient _client = new HttpClient();
 
-        public RadMacModel()
+        public EpisodesModel(string episodeNameFilter)
         {
             Task.Run(async () => {
                 Episodes = (await MopidyProxy.GetEpisodes())
-                    .Where(_ => _.Name.StartsWith("RadMac"))
+                    .Where(_ => _.Name.StartsWith(episodeNameFilter))
                     .Select(_ => {
                         var parts = _.Name.Split('_', 3);
-                        _.Name = $"{parts[1]} {parts[2].Replace(".m4a", "").Replace('_',' ')}";
+                        _.Name = $"{parts[1]} {parts[2].Replace(".mp3", "").Replace(".aac", "").Replace(".m4a", "").Replace('_',' ')}";
                         return _;
                     })
                     .OrderByDescending(_ => _.Name);

@@ -4,8 +4,9 @@
       "inputFiles": [
         "wwwroot/css/site.css",
         "wwwroot/css/spa.css",
-        "wwwroot/css/radmac.css",
-        "wwwroot/css/light.css"
+        "wwwroot/css/episodes.css",
+        "wwwroot/css/light.css",
+        "wwwroot/css/settings.css"
       ]
     },
     {

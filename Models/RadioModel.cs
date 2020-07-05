@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.Extensions.Configuration;
 using static PiperPicker.Proxies.MopidyProxy;
 
 namespace PiperPicker.Models
@@ -10,17 +12,14 @@ namespace PiperPicker.Models
     [BindProperties]
     public class RadioModel : PageModel
     {
-        HttpClient _client = new HttpClient();
-
-        public RadioModel()
+        public RadioModel(IConfiguration configuration)
         {
-            Stations = new [] {
-                new MopidyItem { Name = "BBC Radio 2", Uri = "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio2_mf_p"},
-                new MopidyItem { Name = "BBC Radio 3", Uri = "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio3_mf_p"},
-                new MopidyItem { Name = "BBC Radio 4", Uri = "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_radio4fm_mf_p"},
-                new MopidyItem { Name = "BBC Radio 6", Uri = "http://bbcmedia.ic.llnwd.net/stream/bbcmedia_6music_mf_p"},
-                new MopidyItem { Name = "Classic FM", Uri = "tunein:station:s8439"}
-            };
+            Stations = configuration
+                .GetSection("Mopidy:RadioStreams")
+                .GetChildren()
+                .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
+                .OrderBy(_ => _.Name)
+                .ToArray();
         }
 
         public IEnumerable<MopidyItem> Stations { get; set; }
