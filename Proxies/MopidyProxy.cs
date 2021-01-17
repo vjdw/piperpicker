@@ -52,7 +52,8 @@ namespace PiperPicker.Proxies
             var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
             var stateResponseTask = MopidyPost("core.playback.get_state");
 
-            var mopidyResponse = JObject.Parse(await currentTrackResponseTask);
+            var currentTrackResponse = await currentTrackResponseTask;
+            var mopidyResponse = JObject.Parse(currentTrackResponse);
             var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>()
                 ?? new NowPlayingDto();
             nowPlaying.State = JsonConvert.DeserializeObject<StateDto>(await stateResponseTask).Result;
@@ -70,7 +71,7 @@ namespace PiperPicker.Proxies
         public static async Task PlayEpisode(string episodeUri)
         {
             await ClearQueue();
-            await MopidyPost("core.tracklist.add", episodeUri);
+            await MopidyPost("core.tracklist.add", new string[] { episodeUri });
             await Play();
         }
 
@@ -103,11 +104,26 @@ namespace PiperPicker.Proxies
             }
         }
 
+        private static async Task<string> MopidyPost(string method, string[] targetUris)
+        {
+            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonConvert.SerializeObject(targetUris)}}} }}";
+            var content = new StringContent(requestContent);
+            content.Headers.Clear();
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+            var response = await _client.PostAsync($"{MopidyEndpoint}", content);
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return responseContent;
+        }
+
         private static async Task<string> MopidyPost(string method, string targetUri = null)
         {
-            var content = new StringContent($"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" {(string.IsNullOrEmpty(targetUri) ? "" : $", \"params\":{{\"uri\":\"{targetUri}\"}}")} }}");
+            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" {(string.IsNullOrEmpty(targetUri) ? "" : $", \"params\":{{\"uri\":\"{targetUri}\"}}")} }}";
+            var content = new StringContent(requestContent);
+            content.Headers.Clear();
+            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
             var response = await _client.PostAsync($"{MopidyEndpoint}", content);
-            return await response.Content.ReadAsStringAsync();
+            var responseContent = await response.Content.ReadAsStringAsync();
+            return responseContent;
         }
 
         private static void RaiseEvent(string info)
