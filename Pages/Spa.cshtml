@@ -40,7 +40,7 @@
         });
 
         document.getElementById('linkid-initialisenowplaying').click();
-        document.getElementById('linkid-control').click();
+        document.getElementById('linkid-playlist').click();
 
     </script>
 }
@@ -53,7 +53,7 @@
         <a class="nav-item-container" href="" data-ajax="true" data-ajax-url="spa/?handler=RadioPartial" data-ajax-update="#panel" data-ajax-success="hideShowForPartial('navitem-radio')">
             <div id="navitem-radio" class="nav-item icon radio"></div>
         </a>
-        <a class="nav-item-container" href="" data-ajax="true" data-ajax-url="spa/?handler=EpisodesPartial" data-ajax-update="#panel" data-ajax-success="hideShowForPartial('navitem-playlist')">
+        <a id="linkid-playlist" class="nav-item-container" href="" data-ajax="true" data-ajax-url="spa/?handler=EpisodesPartial" data-ajax-update="#panel" data-ajax-success="hideShowForPartial('navitem-playlist')">
             <div id="navitem-playlist" class="nav-item icon playlist"></div>
         </a>
         <a class="nav-item-container" href="" data-ajax="true" data-ajax-url="spa/?handler=LightingView" data-ajax-update="#panel" data-ajax-success="hideShowForPartial('navitem-lighting')">

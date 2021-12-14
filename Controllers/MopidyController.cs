@@ -32,6 +32,14 @@ namespace PiperPicker.Controllers
             return new JsonResult(new {Result = "ok"});
         }
 
+        [HttpPost("playrandomepisode")]
+        public async Task<ActionResult> PostPlayRandomEpisode()
+        {
+            await MopidyProxy.PlayRandomEpisode();
+
+            return new JsonResult(new { Result = "ok" });
+        }
+
         [HttpPost("clear")]
         public async Task<ActionResult> PostClearQueue()
         {

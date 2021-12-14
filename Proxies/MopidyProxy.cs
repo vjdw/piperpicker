@@ -30,6 +30,7 @@ namespace PiperPicker.Proxies
     {
         private static string MopidyEndpoint;
         private static HttpClient _client = new HttpClient();
+        private static Random _random = new Random();
 
         public static event MopidyNotificationEventHandler OnMopidyNotification;
         public static IConfiguration Configuration;
@@ -73,6 +74,13 @@ namespace PiperPicker.Proxies
             await ClearQueue();
             await MopidyPost("core.tracklist.add", new string[] { episodeUri });
             await Play();
+        }
+
+        public static async Task PlayRandomEpisode()
+        {
+            var episodes = await GetEpisodes();
+            var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
+            await PlayEpisode(randomEpisode.Uri);
         }
 
         public static async Task ClearQueue()

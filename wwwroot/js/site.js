@@ -17,7 +17,9 @@ function setSnapClientGlobalVolume(e, percentagePointChange) {
         contentType: "application/json; charset=utf-8",
         async: true,
         dataType: "json",
-        data: JSON.stringify({ PercentagePointChange: percentagePointChange })
+        data: JSON.stringify({ PercentagePointChange: percentagePointChange }),
+        success: (toggleResult) => { document.getElementById('linkid-refreshsnapclients').click(); },
+        error: (toggleResult) => { document.getElementById('linkid-refreshsnapclients').click(); }
     });
 }
 
@@ -36,6 +38,16 @@ function mopidyPlayUri(uri, displayStateCallback) {
         type: "POST",
         url: "api/mopidy/playepisode",
         data: JSON.stringify({ uri: uri }),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
+    });
+}
+
+function mopidyPlayRandomEpisode(uri, displayStateCallback) {
+    $.ajax({
+        type: "POST",
+        url: "api/mopidy/playrandomepisode",
         contentType: "application/json; charset=utf-8",
         dataType: "json",
         success: (toggleResult) => { displayStateCallback && displayStateCallback(toggleResult.state); }
