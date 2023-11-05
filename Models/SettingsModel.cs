@@ -1,17 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc.RazorPages;
-using System.Collections.Generic;
-using static PiperPicker.Proxies.LightingProxy;
 
 namespace PiperPicker.Models
 {
     public class SettingsModel : PageModel
     {
-        public IEnumerable<LightSetting> LightSettings { get; set; }
+        public IEnumerable<DummySetting> DummySettings { get; set; } = default!;
     }
 
-    public class LightSetting
+    public class DummySetting
     {
-        public string Hostname { get; set; }
-        public LightStateDto State { get; set; }
+        public string Xyzzy { get; set; } = default!;
     }
 }

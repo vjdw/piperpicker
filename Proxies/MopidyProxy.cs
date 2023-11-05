@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using PiperPicker.HostedServices;
 
 namespace PiperPicker.Proxies
@@ -45,27 +44,27 @@ namespace PiperPicker.Proxies
         public static async Task<StateDto> GetState()
         {
             var responseContent = await MopidyPost("core.playback.get_state");
-            return JsonConvert.DeserializeObject<StateDto>(responseContent);
+            return JsonSerializer.Deserialize<StateDto>(responseContent);
         }
 
-        public static async Task<NowPlayingDto> GetNowPlaying()
-        {
-            var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
-            var stateResponseTask = MopidyPost("core.playback.get_state");
+        // public static async Task<NowPlayingDto> GetNowPlaying()
+        // {
+        //     var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
+        //     var stateResponseTask = MopidyPost("core.playback.get_state");
 
-            var currentTrackResponse = await currentTrackResponseTask;
-            var mopidyResponse = JObject.Parse(currentTrackResponse);
-            var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>()
-                ?? new NowPlayingDto();
-            nowPlaying.State = JsonConvert.DeserializeObject<StateDto>(await stateResponseTask).Result;
+        //     var currentTrackResponse = await currentTrackResponseTask;
+        //     var mopidyResponse = JObject.Parse(currentTrackResponse);
+        //     var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>()
+        //         ?? new NowPlayingDto();
+        //     nowPlaying.State = JsonConvert.DeserializeObject<StateDto>(await stateResponseTask).Result;
 
-            return nowPlaying;
-        }
+        //     return nowPlaying;
+        // }
 
         public static async Task<IList<MopidyItem>> GetEpisodes()
         {
             var responseContent = await MopidyPost("core.library.browse", Configuration["Mopidy:EpisodeList:Path"]);
-            var mopidyItems = JsonConvert.DeserializeObject<MopidyItems>(responseContent);
+            var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent);
             return mopidyItems.Result;
         }
 
@@ -114,7 +113,7 @@ namespace PiperPicker.Proxies
 
         private static async Task<string> MopidyPost(string method, string[] targetUris)
         {
-            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonConvert.SerializeObject(targetUris)}}} }}";
+            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris)}}} }}";
             var content = new StringContent(requestContent);
             content.Headers.Clear();
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
@@ -139,36 +138,26 @@ namespace PiperPicker.Proxies
             OnMopidyNotification?.Invoke(null, new MopidyNotificationEventArgs("playepisode"));
         }
 
-        [JsonObject]
         public class PlayMopidyItemDto
         {
-            [JsonProperty]
             public string Uri { get; set; }
         }
 
-        [JsonObject]
         public class StateDto
         {
-            [JsonProperty]
             public string Result { get; set; }
         }
 
-        [JsonObject]
         public class NowPlayingDto
         {
-            [JsonProperty]
             public string State { get; set; }
 
-            [JsonProperty]
             public string Name { get; set; }
 
-            [JsonProperty]
             public string Uri { get; set; }
 
-            [JsonProperty]
             public string Comment { get; set; }
 
-            [JsonProperty]
             public string Date { get; set; }
         }
 

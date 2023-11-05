@@ -4,10 +4,6 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.RazorPages;
-using Newtonsoft;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
 using PiperPicker.Proxies;
 
 namespace PiperPicker.Controllers
@@ -64,10 +60,8 @@ namespace PiperPicker.Controllers
             return new JsonResult(new {Result = "ok", State = newPlayingState});
         }
 
-        [JsonObject]
         public class PlayEpisodeDto
         {
-            [JsonProperty]
             public string Uri {get; set;}
         }
 

@@ -2,8 +2,6 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.SignalR;
-using PiperPicker.Hubs;
 using PiperPicker.Proxies;
 
 namespace PiperPicker.Controllers
@@ -12,11 +10,9 @@ namespace PiperPicker.Controllers
     [ApiController]
     public class SnapController : ControllerBase
     {
-        private static IHubContext<StateHub> _stateHubContext;
-
-        public SnapController(IHubContext<StateHub> hubContext)
+        public SnapController()
         {
-            _stateHubContext = hubContext;
+            //_stateHubContext = hubContext;
         }
 
         [HttpPost("snapclientmute")]
@@ -30,11 +26,11 @@ namespace PiperPicker.Controllers
         [HttpPost("snapclientglobalvolume")]
         public async Task<ActionResult> PostSnapClientGlobalVolume([FromBody] PostSnapClientGlobalVolumeDto dto)
         {
-            var snapClients = SnapProxy.GetSnapClients();
-            foreach (var client in snapClients)
-            {
-                SnapProxy.SetVolume(client.Mac, dto.PercentagePointChange);
-            }
+            // var snapClients = SnapProxy.GetSnapClients();
+            // foreach (var client in snapClients)
+            // {
+            //     SnapProxy.SetVolume(client.Mac, dto.PercentagePointChange);
+            // }
 
             return new JsonResult(new { Result = "ok" });
         }

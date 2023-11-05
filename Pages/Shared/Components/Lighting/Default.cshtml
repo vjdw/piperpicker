@@ -1,6 +1,0 @@
-@model PiperPicker.Models.LightingModel
-
-@foreach (var lightController in @Model.LightControllers)
-{
-    <vc:light hostname="@lightController.Hostname"></vc:light>
-}
