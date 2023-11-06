@@ -1,39 +1,39 @@
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+//using System;
+//using System.Threading;
+//using System.Threading.Tasks;
+//using Microsoft.AspNetCore.SignalR;
+//using Microsoft.Extensions.DependencyInjection;
+//using Microsoft.Extensions.Hosting;
 
-namespace PiperPicker.HostedServices
-{
-    // xyzzy remove HostedServiceRunner and host each service in each client's blazor scope
-    internal class HostedServiceRunner : IHostedService
-    {
-        public HostedServiceRunner(IServiceProvider services)
-        {
-            Services = services;
-        }
+//namespace PiperPicker.HostedServices
+//{
+//    // xyzzy remove HostedServiceRunner and host each service in each client's blazor scope
+//    internal class HostedServiceRunner : IHostedService
+//    {
+//        public HostedServiceRunner(IServiceProvider services)
+//        {
+//            Services = services;
+//        }
 
-        public IServiceProvider Services { get; }
+//        public IServiceProvider Services { get; }
 
-        public Task StartAsync(CancellationToken cancellationToken)
-        {
-            using(var scope = Services.CreateScope())
-            {
-                var snapService = scope.ServiceProvider.GetRequiredService<SnapScopedProcessingService>();
-                snapService.DoWork();
+//        public Task StartAsync(CancellationToken cancellationToken)
+//        {
+//            using(var scope = Services.CreateScope())
+//            {
+//                var snapService = scope.ServiceProvider.GetRequiredService<SnapScopedProcessingService>();
+//                snapService.DoWork();
 
-                var mopidyService = scope.ServiceProvider.GetRequiredService<MopidyScopedProcessingService>();
-                mopidyService.DoWork();
-            }
+//                var mopidyService = scope.ServiceProvider.GetRequiredService<MopidyScopedProcessingService>();
+//                mopidyService.DoWork();
+//            }
 
-            return Task.CompletedTask;
-        }
+//            return Task.CompletedTask;
+//        }
 
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
-        }
-    }
-}
+//        public Task StopAsync(CancellationToken cancellationToken)
+//        {
+//            return Task.CompletedTask;
+//        }
+//    }
+//}

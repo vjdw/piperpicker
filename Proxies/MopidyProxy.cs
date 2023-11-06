@@ -6,7 +6,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using PiperPicker.HostedServices;
 
 namespace PiperPicker.Proxies
 {
@@ -28,15 +27,23 @@ namespace PiperPicker.Proxies
     public class MopidyProxy
     {
         private string MopidyEndpoint;
-        private HttpClient _client = new HttpClient();
+        private HttpClient _client = default!;
         private Random _random = new Random();
 
         public event MopidyNotificationEventHandler OnMopidyNotification;
         public IConfiguration Configuration;
-        public ILogger<MopidyScopedProcessingService> Logger;
+        public ILogger<MopidyProxy> Logger;
+
+        public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<MopidyProxy> logger)
+        {
+            _client = httpClientFactory.CreateClient();
+            Configuration = configuration;
+            Logger = logger;
+        }
 
         public void Start()
         {
+            
             Logger.LogInformation($"{nameof(MopidyProxy)} starting");
             MopidyEndpoint = Configuration["Mopidy:Endpoint"];
         }

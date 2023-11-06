@@ -1,1 +1,44 @@
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@inject SnapcastClientProxy SnapcastClientProxy
+
 <p>this is a volume control</p>
+
+<input type="range" min="0" max="100" step="1" @onchange="VolumeChangeEventHandler" value="@_snapClient.Config.Volume.Percent" class="slider">
+
+@code {
+    private const string _snapcastKitchenId = "b8:27:eb:d2:ae:1b"; // xyzzy make this configurable
+    private SnapcastClient _snapClient = SnapcastClient.BuildDefault(_snapcastKitchenId);
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            SnapcastClientProxy.OnSnapNotification += SnapNotificationEventHandler;
+            if (SnapcastClientProxy.TryGetSnapClient(_snapcastKitchenId, out var snapclient))
+            {
+                _snapClient = snapclient;
+                StateHasChanged();
+            }
+            SnapcastClientProxy.MonitorClient(_snapcastKitchenId);
+        }
+    }
+
+    private void SnapNotificationEventHandler(object sender, SnapcastClientNotificationEventArgs snapNotification)
+    {
+        InvokeAsync(() => {
+            _snapClient = snapNotification.GetClientState();
+            StateHasChanged();
+        });
+    }
+
+    private void VolumeChangeEventHandler(ChangeEventArgs volumeChangeEvent)
+    {
+        if (int.TryParse(volumeChangeEvent.Value?.ToString(), out int volume))
+        {
+            SnapcastClientProxy.SetVolume(_snapcastKitchenId, volume);
+        }
+    }
+}
