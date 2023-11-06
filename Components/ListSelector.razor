@@ -1,1 +1,57 @@
-<p>lists go here</p>
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using PiperPicker.Models;
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@using static PiperPicker.Proxies.MopidyProxy;
+
+@inject IConfiguration Configuration
+@inject MopidyProxy MopidyProxy
+
+<div id="list-container">
+
+    @if (_radioStations != null)
+    {
+        <div id="radio-list" class="content-list">
+            @foreach (var radioStation in _radioStations)
+            {
+                <p @key="radioStation.Uri">@radioStation.Name</p>
+            }
+        </div>
+    }
+
+    @if (_episodes != null)
+    {
+        <div id="episode-list" class="content-list" style="height:500px;overflow-y:scroll">
+            <Virtualize Items="@_episodes" Context="episode">
+                <p @key="episode.Uri">@episode.Name</p>
+            </Virtualize>
+        </div>
+    }
+
+</div>
+
+@code {
+    IList<MopidyItem> _episodes = default!;
+    IList<MopidyItem> _radioStations = default!;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            var episodesTask = MopidyProxy.GetEpisodes();
+
+            _radioStations = Configuration
+                .GetSection("Mopidy:RadioStreams")
+                .GetChildren()
+                .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
+                .OrderBy(_ => _.Name)
+                .ToList();
+
+            _episodes = await episodesTask;
+
+            StateHasChanged();
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+}

@@ -26,6 +26,11 @@ namespace PiperPicker.Proxies
 
     public class MopidyProxy
     {
+        private JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        };
+
         private string MopidyEndpoint;
         private HttpClient _client = default!;
         private Random _random = new Random();
@@ -39,11 +44,7 @@ namespace PiperPicker.Proxies
             _client = httpClientFactory.CreateClient();
             Configuration = configuration;
             Logger = logger;
-        }
 
-        public void Start()
-        {
-            
             Logger.LogInformation($"{nameof(MopidyProxy)} starting");
             MopidyEndpoint = Configuration["Mopidy:Endpoint"];
         }
@@ -51,27 +52,26 @@ namespace PiperPicker.Proxies
         public async Task<StateDto> GetState()
         {
             var responseContent = await MopidyPost("core.playback.get_state");
-            return JsonSerializer.Deserialize<StateDto>(responseContent);
+            return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
         }
 
-        // public async Task<NowPlayingDto> GetNowPlaying()
-        // {
-        //     var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
-        //     var stateResponseTask = MopidyPost("core.playback.get_state");
+        public async Task<NowPlayingDto> GetNowPlaying()
+        {
+            var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
+            var stateResponseTask = MopidyPost("core.playback.get_state");
 
-        //     var currentTrackResponse = await currentTrackResponseTask;
-        //     var mopidyResponse = JObject.Parse(currentTrackResponse);
-        //     var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>()
-        //         ?? new NowPlayingDto();
-        //     nowPlaying.State = JsonConvert.DeserializeObject<StateDto>(await stateResponseTask).Result;
+            var currentTrackResponse = await currentTrackResponseTask;
+            var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
+            // var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>() ?? new NowPlayingDto();
+            nowPlaying.NowPlayingDto.State = await stateResponseTask;
 
-        //     return nowPlaying;
-        // }
+            return nowPlaying.NowPlayingDto;
+        }
 
         public async Task<IList<MopidyItem>> GetEpisodes()
         {
             var responseContent = await MopidyPost("core.library.browse", Configuration["Mopidy:EpisodeList:Path"]);
-            var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent);
+            var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent, _serialiserOptions);
             return mopidyItems.Result;
         }
 
@@ -120,7 +120,7 @@ namespace PiperPicker.Proxies
 
         private async Task<string> MopidyPost(string method, string[] targetUris)
         {
-            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris)}}} }}";
+            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris, _serialiserOptions)}}} }}";
             var content = new StringContent(requestContent);
             content.Headers.Clear();
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
@@ -153,6 +153,11 @@ namespace PiperPicker.Proxies
         public class StateDto
         {
             public string Result { get; set; }
+        }
+
+        public class NowPlayingResponse
+        {
+            public NowPlayingDto NowPlayingDto { get; set; }
         }
 
         public class NowPlayingDto

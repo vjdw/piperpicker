@@ -2,12 +2,11 @@
 @using PiperPicker.Proxies
 @inject SnapcastClientProxy SnapcastClientProxy
 
-<p>this is a volume control</p>
-
-<input type="range" min="0" max="100" step="1" @onchange="VolumeChangeEventHandler" value="@_snapClient.Config.Volume.Percent" class="slider">
+<input id="volume-slider" type="range" min="0" max="100" step="1" @onchange="VolumeChangeEventHandler" value="@_snapClient.Config.Volume.Percent" class="slider">
 
 @code {
-    private const string _snapcastKitchenId = "b8:27:eb:d2:ae:1b"; // xyzzy make this configurable
+    // private const string _snapcastKitchenId = "b8:27:eb:d2:ae:1b"; // xyzzy make this configurable
+    private const string _snapcastKitchenId = "5db9e0b4-c6d9-4372-9ef6-1e615e9d805b";
     private SnapcastClient _snapClient = SnapcastClient.BuildDefault(_snapcastKitchenId);
 
     protected override void OnAfterRender(bool firstRender)

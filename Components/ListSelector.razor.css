@@ -1,0 +1,23 @@
+﻿body {
+}
+
+
+#list-container {
+    display:flex;
+    width:100%;
+    flex-direction:row;
+}
+
+#radio-list {
+    background-color: #855;
+    min-width: 12rem;
+}
+
+#episode-list {
+    background-color: #585;
+    width: 100%;
+}
+
+div.content-list {
+
+}

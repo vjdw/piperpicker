@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PiperPicker", "piperpicker.csproj", "{70AC2E2F-A013-4929-A835-7253C61D7663}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "piperpicker", "piperpicker.csproj", "{70AC2E2F-A013-4929-A835-7253C61D7663}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

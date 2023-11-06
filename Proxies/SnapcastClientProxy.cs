@@ -231,7 +231,7 @@ namespace PiperPicker.Proxies
             SendSnapRequest(request);
         }
 
-        public void SetVolume(string clientMac, int percentagePointChange)
+        public void SetVolume(string clientMac, int newVolume)
         {
             lock (_clientReadLock)
             {
@@ -239,7 +239,6 @@ namespace PiperPicker.Proxies
                 {
                     if (TryGetSnapClient(clientMac, out var client))
                     {
-                        var newVolume = Math.Clamp(client.Config.Volume.Percent + percentagePointChange, 0, 100);
                         object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { percent = newVolume } });
                         SendSnapRequest(request);
                     }
