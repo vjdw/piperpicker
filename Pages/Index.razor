@@ -1,5 +1,53 @@
 ﻿@page "/"
 @using piperpicker.Components
+@using PiperPicker.Proxies
+@inject SnapProxy SnapProxy
 
 <VolumeControl></VolumeControl>
 <ListSelector></ListSelector>
+
+<p>@_snapStatus</p>
+
+@code {
+    //private SnapProxy _snapProxy = default!;
+    private string _snapStatus = "Connecting...";
+    //private HttpClient client = new HttpClient();
+    //SnapProxy.Logger = _logger;
+    //SnapProxy.Configuration = _configuration;
+    // SnapProxy.OnSnapNotification +=
+    //     async(object sender, SnapNotificationEventArgs e) =>
+    //     {
+    //       //  await _hubContext.Clients.All.SendAsync("SnapNotification", e.GetInfo());
+    //     };
+
+    public Index()
+    {
+       // SnapProxy _snapProxy = new SnapProxy();
+      //  SnapProxy.OnSnapNotification += SnapNotificationEventHandler;
+      //   SnapProxy.Logger = _logger;
+      //  SnapProxy.Configuration = _configuration; *@
+      //  SnapProxy.Start(); 
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        base.OnAfterRender(firstRender);
+
+        if (firstRender)
+        {
+            // SnapProxy _snapProxy = new SnapProxy();
+            SnapProxy.OnSnapNotification += SnapNotificationEventHandler;
+            @* SnapProxy.Logger = _logger;
+            SnapProxy.Configuration = _configuration; *@
+            SnapProxy.Start();
+        }
+    }
+
+    private void SnapNotificationEventHandler(object sender, SnapNotificationEventArgs snapNotification)
+    {
+        InvokeAsync(() => {
+            _snapStatus = snapNotification.GetInfo();
+            StateHasChanged();
+        });
+    }
+}

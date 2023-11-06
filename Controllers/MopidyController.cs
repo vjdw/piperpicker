@@ -1,74 +1,74 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using PiperPicker.Proxies;
+// using System;
+// using System.Collections.Generic;
+// using System.Linq;
+// using System.Net.Http;
+// using System.Threading.Tasks;
+// using Microsoft.AspNetCore.Mvc;
+// using PiperPicker.Proxies;
 
-namespace PiperPicker.Controllers
-{
-    [Route("api/[controller]")]
-    [ApiController]
-    public class MopidyController : ControllerBase
-    {
-        [HttpGet("episodes")]
-        public async Task<ActionResult<IList<Episode>>> GetEpisodes()
-        {
-            return new JsonResult(await MopidyProxy.GetEpisodes());
-        }
+// namespace PiperPicker.Controllers
+// {
+//     [Route("api/[controller]")]
+//     [ApiController]
+//     public class MopidyController : ControllerBase
+//     {
+//         [HttpGet("episodes")]
+//         public async Task<ActionResult<IList<Episode>>> GetEpisodes()
+//         {
+//             return new JsonResult(await MopidyProxy.GetEpisodes());
+//         }
 
-        [HttpPost("playepisode")]
-        public async Task<ActionResult> PostPlayEpisode([FromBody]PlayEpisodeDto data)
-        {
-            await MopidyProxy.ClearQueue();
-            await MopidyProxy.PlayEpisode(data.Uri);
-            await MopidyProxy.Play();
+//         [HttpPost("playepisode")]
+//         public async Task<ActionResult> PostPlayEpisode([FromBody]PlayEpisodeDto data)
+//         {
+//             await MopidyProxy.ClearQueue();
+//             await MopidyProxy.PlayEpisode(data.Uri);
+//             await MopidyProxy.Play();
 
-            return new JsonResult(new {Result = "ok"});
-        }
+//             return new JsonResult(new {Result = "ok"});
+//         }
 
-        [HttpPost("playrandomepisode")]
-        public async Task<ActionResult> PostPlayRandomEpisode()
-        {
-            await MopidyProxy.PlayRandomEpisode();
+//         [HttpPost("playrandomepisode")]
+//         public async Task<ActionResult> PostPlayRandomEpisode()
+//         {
+//             await MopidyProxy.PlayRandomEpisode();
 
-            return new JsonResult(new { Result = "ok" });
-        }
+//             return new JsonResult(new { Result = "ok" });
+//         }
 
-        [HttpPost("clear")]
-        public async Task<ActionResult> PostClearQueue()
-        {
-            await MopidyProxy.ClearQueue();
+//         [HttpPost("clear")]
+//         public async Task<ActionResult> PostClearQueue()
+//         {
+//             await MopidyProxy.ClearQueue();
 
-            return new JsonResult(new {Result = "ok"});
-        }
+//             return new JsonResult(new {Result = "ok"});
+//         }
 
-        [HttpPost("play")]
-        public async Task<ActionResult> PostPlay()
-        {
-            await MopidyProxy.Play();
+//         [HttpPost("play")]
+//         public async Task<ActionResult> PostPlay()
+//         {
+//             await MopidyProxy.Play();
 
-            return new JsonResult(new {Result = "ok"});
-        }
+//             return new JsonResult(new {Result = "ok"});
+//         }
 
-        [HttpPost("togglepause")]
-        public async Task<ActionResult> PostTogglePause()
-        {
-            var newPlayingState = await MopidyProxy.TogglePause();
+//         [HttpPost("togglepause")]
+//         public async Task<ActionResult> PostTogglePause()
+//         {
+//             var newPlayingState = await MopidyProxy.TogglePause();
 
-            return new JsonResult(new {Result = "ok", State = newPlayingState});
-        }
+//             return new JsonResult(new {Result = "ok", State = newPlayingState});
+//         }
 
-        public class PlayEpisodeDto
-        {
-            public string Uri {get; set;}
-        }
+//         public class PlayEpisodeDto
+//         {
+//             public string Uri {get; set;}
+//         }
 
-        public class Episode
-        {
-            public string Name {get; set;}
-            public string Uri {get; set;}
-        }
-    }
-}
+//         public class Episode
+//         {
+//             public string Name {get; set;}
+//             public string Uri {get; set;}
+//         }
+//     }
+// }

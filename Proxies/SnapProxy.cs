@@ -27,22 +27,28 @@ namespace PiperPicker.Proxies
         }
     }
 
-    public static class SnapProxy
+    public class SnapProxy
     {
-        private static string SnapServerHost;
-        private static int SnapServerPort;
+        private string SnapServerHost;
+        private int SnapServerPort;
 
-        private static NetworkStream _stream;
-        private static readonly object _clientReadLock = new object();
-        private static readonly object _clientWriteLock = new object();
+        private NetworkStream _stream;
+        private readonly object _clientReadLock = new object();
+        private readonly object _clientWriteLock = new object();
 
-        private static Dictionary<string, string> ClientNameMap;
+        private Dictionary<string, string> ClientNameMap;
 
-        public static event SnapNotificationEventHandler OnSnapNotification;
-        public static IConfiguration Configuration;
-        public static ILogger<SnapScopedProcessingService> Logger;
+        public event SnapNotificationEventHandler OnSnapNotification;
+        public IConfiguration Configuration;
+        public ILogger<SnapScopedProcessingService> Logger;
 
-        public static void Start()
+        public SnapProxy(IConfiguration configuration, ILogger<SnapScopedProcessingService> logger)
+        {
+            Configuration = configuration;
+            Logger = logger;
+        }
+
+        public void Start()
         {
             Logger.LogInformation($"{nameof(SnapProxy)} starting");
 
@@ -67,7 +73,7 @@ namespace PiperPicker.Proxies
             }
         }
 
-        private static void MonitorStream()
+        private void MonitorStream()
         {
             var rnd = new Random();
             int readBufferSize = 16000;
@@ -124,7 +130,7 @@ namespace PiperPicker.Proxies
             }
         }
 
-        // public static IEnumerable<SnapClient> GetSnapClients()
+        // public IEnumerable<SnapClient> GetSnapClients()
         // {
         //     var request = BuildSnapRequest("Server.GetStatus");
         //     string responseJson = SendSnapRequest(request, waitForResponse: true);
@@ -162,7 +168,7 @@ namespace PiperPicker.Proxies
         //     }
         // }
 
-        // public static bool TryGetSnapClient(string clientMac, out SnapClient snapclient)
+        // public bool TryGetSnapClient(string clientMac, out SnapClient snapclient)
         // {
         //     var request = BuildSnapRequest("Client.GetStatus", new { id = clientMac });
         //     string responseJson = SendSnapRequest(request, waitForResponse: true);
@@ -185,13 +191,13 @@ namespace PiperPicker.Proxies
         //     return false;
         // }
 
-        public static void SetMute(string clientMac, bool muted)
+        public void SetMute(string clientMac, bool muted)
         {
             object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { muted = muted } });
             SendSnapRequest(request);
         }
 
-        public static void SetVolume(string clientMac, int percentagePointChange)
+        public void SetVolume(string clientMac, int percentagePointChange)
         {
             // lock (_clientReadLock)
             // {
@@ -207,7 +213,7 @@ namespace PiperPicker.Proxies
             // }
         }
 
-        private static object BuildSnapRequest(string method, object @params = null)
+        private object BuildSnapRequest(string method, object @params = null)
         {
             dynamic requestObj = new
             {
@@ -219,7 +225,7 @@ namespace PiperPicker.Proxies
             return requestObj;
         }
 
-        private static string SendSnapRequest(dynamic requestObj, bool waitForResponse = false)
+        private string SendSnapRequest(dynamic requestObj, bool waitForResponse = false)
         {
             lock (_clientReadLock)
             {

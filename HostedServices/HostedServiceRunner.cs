@@ -7,6 +7,7 @@ using Microsoft.Extensions.Hosting;
 
 namespace PiperPicker.HostedServices
 {
+    // xyzzy remove HostedServiceRunner and host each service in each client's blazor scope
     internal class HostedServiceRunner : IHostedService
     {
         public HostedServiceRunner(IServiceProvider services)

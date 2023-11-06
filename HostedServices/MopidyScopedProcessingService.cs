@@ -22,16 +22,16 @@ namespace PiperPicker.HostedServices
         public void DoWork()
         {
             var client = new HttpClient();
-            MopidyProxy.Logger = _logger;
-            MopidyProxy.Configuration = _configuration;
-            MopidyProxy.OnMopidyNotification +=
-                async(object sender, MopidyNotificationEventArgs e) =>
-                {
-                   // await _hubContext.Clients.All.SendAsync("MopidyNotification", e.GetInfo());
-                   // await System.Threading.Tasks.Task.Delay(5000);
-                  //  await _hubContext.Clients.All.SendAsync("MopidyNotification", e.GetInfo());
-                };
-            MopidyProxy.Start();
+            // MopidyProxy.Logger = _logger;
+            // MopidyProxy.Configuration = _configuration;
+            // MopidyProxy.OnMopidyNotification +=
+            //     async(object sender, MopidyNotificationEventArgs e) =>
+            //     {
+            //        // await _hubContext.Clients.All.SendAsync("MopidyNotification", e.GetInfo());
+            //        // await System.Threading.Tasks.Task.Delay(5000);
+            //       //  await _hubContext.Clients.All.SendAsync("MopidyNotification", e.GetInfo());
+            //     };
+            // MopidyProxy.Start();
         }
     }
 }

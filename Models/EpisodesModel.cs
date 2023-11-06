@@ -17,16 +17,16 @@ namespace PiperPicker.Models
 
         public EpisodesModel(string episodeNameFilter)
         {
-            Task.Run(async () => {
-                Episodes = (await MopidyProxy.GetEpisodes())
-                    .Where(_ => _.Name.StartsWith(episodeNameFilter))
-                    .Select(_ => {
-                        var parts = _.Name.Split('_', 3);
-                        _.Name = $"{parts[1]} {parts[2].Replace(".mp3", "").Replace(".aac", "").Replace(".m4a", "").Replace('_',' ')}";
-                        return _;
-                    })
-                    .OrderByDescending(_ => _.Name);
-            }).Wait();
+            // Task.Run(async () => {
+            //     Episodes = (await MopidyProxy.GetEpisodes())
+            //         .Where(_ => _.Name.StartsWith(episodeNameFilter))
+            //         .Select(_ => {
+            //             var parts = _.Name.Split('_', 3);
+            //             _.Name = $"{parts[1]} {parts[2].Replace(".mp3", "").Replace(".aac", "").Replace(".m4a", "").Replace('_',' ')}";
+            //             return _;
+            //         })
+            //         .OrderByDescending(_ => _.Name);
+            // }).Wait();
         }
 
         public IEnumerable<MopidyItem> Episodes { get; set; }

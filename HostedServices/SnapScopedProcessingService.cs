@@ -22,14 +22,14 @@ namespace PiperPicker.HostedServices
         public void DoWork()
         {
             var client = new HttpClient();
-            SnapProxy.Logger = _logger;
-            SnapProxy.Configuration = _configuration;
-            // SnapProxy.OnSnapNotification +=
-            //     async(object sender, SnapNotificationEventArgs e) =>
-            //     {
-            //       //  await _hubContext.Clients.All.SendAsync("SnapNotification", e.GetInfo());
-            //     };
-            SnapProxy.Start();
+            // SnapProxy.Logger = _logger;
+            // SnapProxy.Configuration = _configuration;
+            // // SnapProxy.OnSnapNotification +=
+            // //     async(object sender, SnapNotificationEventArgs e) =>
+            // //     {
+            // //       //  await _hubContext.Clients.All.SendAsync("SnapNotification", e.GetInfo());
+            // //     };
+            // SnapProxy.Start();
         }
     }
 }

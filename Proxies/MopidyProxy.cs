@@ -25,29 +25,29 @@ namespace PiperPicker.Proxies
         }
     }
 
-    public static class MopidyProxy
+    public class MopidyProxy
     {
-        private static string MopidyEndpoint;
-        private static HttpClient _client = new HttpClient();
-        private static Random _random = new Random();
+        private string MopidyEndpoint;
+        private HttpClient _client = new HttpClient();
+        private Random _random = new Random();
 
-        public static event MopidyNotificationEventHandler OnMopidyNotification;
-        public static IConfiguration Configuration;
-        public static ILogger<MopidyScopedProcessingService> Logger;
+        public event MopidyNotificationEventHandler OnMopidyNotification;
+        public IConfiguration Configuration;
+        public ILogger<MopidyScopedProcessingService> Logger;
 
-        public static void Start()
+        public void Start()
         {
             Logger.LogInformation($"{nameof(MopidyProxy)} starting");
             MopidyEndpoint = Configuration["Mopidy:Endpoint"];
         }
 
-        public static async Task<StateDto> GetState()
+        public async Task<StateDto> GetState()
         {
             var responseContent = await MopidyPost("core.playback.get_state");
             return JsonSerializer.Deserialize<StateDto>(responseContent);
         }
 
-        // public static async Task<NowPlayingDto> GetNowPlaying()
+        // public async Task<NowPlayingDto> GetNowPlaying()
         // {
         //     var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
         //     var stateResponseTask = MopidyPost("core.playback.get_state");
@@ -61,40 +61,40 @@ namespace PiperPicker.Proxies
         //     return nowPlaying;
         // }
 
-        public static async Task<IList<MopidyItem>> GetEpisodes()
+        public async Task<IList<MopidyItem>> GetEpisodes()
         {
             var responseContent = await MopidyPost("core.library.browse", Configuration["Mopidy:EpisodeList:Path"]);
             var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent);
             return mopidyItems.Result;
         }
 
-        public static async Task PlayEpisode(string episodeUri)
+        public async Task PlayEpisode(string episodeUri)
         {
             await ClearQueue();
             await MopidyPost("core.tracklist.add", new string[] { episodeUri });
             await Play();
         }
 
-        public static async Task PlayRandomEpisode()
+        public async Task PlayRandomEpisode()
         {
             var episodes = await GetEpisodes();
             var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
             await PlayEpisode(randomEpisode.Uri);
         }
 
-        public static async Task ClearQueue()
+        public async Task ClearQueue()
         {
             await MopidyPost("core.tracklist.clear");
         }
 
-        public static async Task Play()
+        public async Task Play()
         {
             await MopidyPost("core.playback.play");
 
             RaiseEvent("play");
         }
 
-        public static async Task<string> TogglePause()
+        public async Task<string> TogglePause()
         {
             var state = await GetState();
             if (state.Result == "playing")
@@ -111,7 +111,7 @@ namespace PiperPicker.Proxies
             }
         }
 
-        private static async Task<string> MopidyPost(string method, string[] targetUris)
+        private async Task<string> MopidyPost(string method, string[] targetUris)
         {
             var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris)}}} }}";
             var content = new StringContent(requestContent);
@@ -122,7 +122,7 @@ namespace PiperPicker.Proxies
             return responseContent;
         }
 
-        private static async Task<string> MopidyPost(string method, string targetUri = null)
+        private async Task<string> MopidyPost(string method, string targetUri = null)
         {
             var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" {(string.IsNullOrEmpty(targetUri) ? "" : $", \"params\":{{\"uri\":\"{targetUri}\"}}")} }}";
             var content = new StringContent(requestContent);
@@ -133,7 +133,7 @@ namespace PiperPicker.Proxies
             return responseContent;
         }
 
-        private static void RaiseEvent(string info)
+        private void RaiseEvent(string info)
         {
             OnMopidyNotification?.Invoke(null, new MopidyNotificationEventArgs("playepisode"));
         }
