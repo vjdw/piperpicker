@@ -1,10 +1,63 @@
+@using System.Net.WebSockets;
 @using piperpicker.Components
 @using PiperPicker.Proxies
+
+@inject ILogger<NowPlayingControl> Logger
 
 <div class="stackable">
     <h1>NOW PLAYING</h1>
 </div>
 
 @code {
-    
+    private ClientWebSocket _cws;
+    private Timer _timer;
+
+    protected async override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+
+
+
+
+            _timer = new System.Threading.Timer(timer_Elapsed, null, 100, 999999999);
+
+
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+    private async void timer_Elapsed(object state)
+    {
+        // xyzzy move this to MopidyProxy, which can raise C# events when pause state or currently playing track changes
+        // xyzzy radmac m4a files include "comment" metadata that comes back through the web socket, could also be displayed in client
+
+        while (true)
+        {
+            try
+            {
+                _cws = new ClientWebSocket();
+                _cws.Options.CollectHttpResponseDetails = true;
+                await _cws.ConnectAsync(new Uri("ws://hunchcorn:6680/mopidy/ws"), CancellationToken.None);
+
+                while (true)
+                {
+                    var array = new byte[16000];
+                    var buffer = new ArraySegment<byte>(array);
+                    //_cws.ReceiveAsync(buffer, CancellationToken.None).GetAwaiter().GetResult();
+                    await _cws.ReceiveAsync(buffer, CancellationToken.None);
+
+                    var message = System.Text.UTF8Encoding.UTF8.GetString(buffer);
+                    Console.WriteLine(message);
+                    Console.WriteLine();
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error in websocket communication with mopidy");
+                await Task.Delay(5000);
+            }
+        }
+    }
 }
