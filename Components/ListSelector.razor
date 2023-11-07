@@ -7,23 +7,23 @@
 @inject IConfiguration Configuration
 @inject MopidyProxy MopidyProxy
 
-<div id="list-container">
+<div id="list-container" class="stackable">
 
     @if (_radioStations != null)
     {
         <div id="radio-list" class="content-list">
             @foreach (var radioStation in _radioStations)
             {
-                <p @key="radioStation.Uri">@radioStation.Name</p>
+                <ListItem MopidyItem=radioStation></ListItem>
             }
         </div>
     }
 
     @if (_episodes != null)
     {
-        <div id="episode-list" class="content-list" style="height:500px;overflow-y:scroll">
+        <div id="episode-list" class="content-list">
             <Virtualize Items="@_episodes" Context="episode">
-                <p @key="episode.Uri">@episode.Name</p>
+                <ListItem MopidyItem=episode></ListItem>
             </Virtualize>
         </div>
     }

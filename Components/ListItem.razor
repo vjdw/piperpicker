@@ -1,0 +1,47 @@
+﻿@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using PiperPicker.Models;
+@using System.Text.RegularExpressions;
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@using static PiperPicker.Proxies.MopidyProxy;
+
+@inject MopidyProxy MopidyProxy
+
+<div id="list-item">
+    <span>@DisplayNameLeadingDate()</span>
+    <input type="button" class="list-item-button button-4" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
+</div>
+
+@code {
+    [Parameter]
+    public MopidyItem MopidyItem { get; set; }
+
+    private string DisplayName => MopidyItem.Name.Split('.').First().Replace("RadMac_", "").Replace("_", " ").Replace("*", "⭐");
+
+    private string DisplayNameWithoutLeadingDate()
+    {
+        var displayName = DisplayName;
+        var dateRegex = new Regex(@"\d\d\d\d-\d\d-\d\d");
+        var date = dateRegex.Match(displayName).Value;
+        var displayNameWithoutDate = string.IsNullOrWhiteSpace(date)
+            ? displayName
+            : displayName.Replace(date, "").Trim();
+
+        return string.IsNullOrWhiteSpace(displayNameWithoutDate)
+            ? date
+            : displayNameWithoutDate;
+    }
+
+    private string DisplayNameLeadingDate()
+    {
+        var displayName = DisplayName;
+        var dateRegex = new Regex(@"\d\d\d\d-\d\d-\d\d");
+        var date = dateRegex.Match(displayName).Value;
+        return date;
+    }
+
+    private async Task ItemClickHandler()
+    {
+        await MopidyProxy.PlayEpisode(MopidyItem.Uri);
+    }
+}

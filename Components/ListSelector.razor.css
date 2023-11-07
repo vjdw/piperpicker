@@ -3,9 +3,10 @@
 
 
 #list-container {
-    display:flex;
-    width:100%;
-    flex-direction:row;
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    min-height: 0;
 }
 
 #radio-list {
@@ -14,10 +15,10 @@
 }
 
 #episode-list {
+    overflow-y: scroll;
     background-color: #585;
     width: 100%;
 }
 
 div.content-list {
-
 }
