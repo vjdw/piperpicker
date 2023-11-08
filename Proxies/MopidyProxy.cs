@@ -1,30 +1,20 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Net.WebSockets;
+using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
 namespace PiperPicker.Proxies
 {
-    public delegate void MopidyNotificationEventHandler(object source, MopidyNotificationEventArgs e);
-
-    public class MopidyNotificationEventArgs : EventArgs
-    {
-        private string EventInfo;
-        public MopidyNotificationEventArgs(string notification)
-        {
-            EventInfo = notification;
-        }
-        public string GetInfo()
-        {
-            return EventInfo;
-        }
-    }
-
-    public class MopidyProxy
+    public class MopidyProxy : IDisposable
     {
         private JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
         {
@@ -38,6 +28,10 @@ namespace PiperPicker.Proxies
         public event MopidyNotificationEventHandler OnMopidyNotification;
         public IConfiguration Configuration;
         public ILogger<MopidyProxy> Logger;
+        private bool disposedValue;
+        private Task _monitorWebSocketTask;
+        private CancellationTokenSource _cancellationTokenSource;
+        private MopidyNowPlayingState _mopidyNowPlayingState;
 
         public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<MopidyProxy> logger)
         {
@@ -47,7 +41,110 @@ namespace PiperPicker.Proxies
 
             Logger.LogInformation($"{nameof(MopidyProxy)} starting");
             MopidyEndpoint = Configuration["Mopidy:Endpoint"];
+
+            try
+            {
+                _cancellationTokenSource = new CancellationTokenSource();
+                _monitorWebSocketTask = Task.Run(() => MonitorWebSocket(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
+            }
+            catch
+            {
+                throw new ApplicationException($"MopidyProxy could not connect to mopidy websocket on {MopidyEndpoint}");
+            }
         }
+
+        private async void MonitorWebSocket(CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                if (cancellationToken.IsCancellationRequested)
+                    break;
+
+                var state = await GetState();
+                _mopidyNowPlayingState = new MopidyNowPlayingState(state.Result == "playing", "", "");
+
+                try
+                {
+                    var cws = new ClientWebSocket();
+                    cws.Options.CollectHttpResponseDetails = true;
+                    await cws.ConnectAsync(new Uri("ws://hunchcorn:6680/mopidy/ws"), CancellationToken.None);
+
+                    while (true)
+                    {
+                        if (cancellationToken.IsCancellationRequested)
+                            break;
+
+                        var messageJson = "{}";
+                        try
+                        {
+                            var array = new byte[16000];
+                            var buffer = new ArraySegment<byte>(array);
+                            var received = await cws.ReceiveAsync(buffer, cancellationToken);
+                            if (received.EndOfMessage)
+                            {
+                                messageJson = UTF8Encoding.UTF8.GetString(buffer);
+                                if (messageJson.Contains('\0'))
+                                {
+                                    messageJson = messageJson.Substring(0, messageJson.IndexOf('\0'));
+                                }
+                                Console.WriteLine(messageJson); // xyzzy remove
+                                var message = JsonSerializer.Deserialize<MopidyBaseMessage>(messageJson, _serialiserOptions);
+
+                                if (message != null)
+                                {
+                                    if (message.Event == "playback_state_changed")
+                                    {
+                                        var playbackStateChangedMessage = JsonSerializer.Deserialize<MopidyPlaybackStateChangedMessage>(messageJson, _serialiserOptions);
+
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { IsPlaying = playbackStateChangedMessage!.NewState == "playing" };
+                                        RaiseEvent(_mopidyNowPlayingState);
+                                    }
+                                    else if (message.Event == "track_playback_started")
+                                    {
+                                        var playbackStartedMessage = JsonSerializer.Deserialize<MopidyTrackPlaybackStartedMessage>(messageJson, _serialiserOptions);
+
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = playbackStartedMessage!.TlTrack.Track.Name, TrackDescription = playbackStartedMessage.TlTrack.Track.Comment };
+                                        RaiseEvent(_mopidyNowPlayingState);
+                                    }
+                                    else if (message.Event == "stream_title_changed")
+                                    {
+                                        var streamTitleChangedMessage = JsonSerializer.Deserialize<MopidyStreamTitleChangedMessage>(messageJson, _serialiserOptions);
+
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackDescription = streamTitleChangedMessage!.Title };
+                                        RaiseEvent(_mopidyNowPlayingState);
+                                    }
+                                    // {"title": "High And Dry - Radiohead", "event": "stream_title_changed"}
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.LogError(ex, $"Error processing websocket message from mopidy: '{messageJson}'");
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Error in websocket communication with mopidy");
+                    await Task.Delay(5000);
+                }
+            }
+        }
+
+        private record MopidyTrack(string Uri, string Name, string Comment);
+        private record MopidyTlTrack(MopidyTrack Track);
+        private record MopidyTrackPlaybackStartedMessage(string Event) : MopidyBaseMessage(Event)
+        {
+            [JsonPropertyName("tl_track")]
+            public MopidyTlTrack TlTrack { get; init; } = default!;
+        }
+        private record MopidyPlaybackStateChangedMessage(string Event) : MopidyBaseMessage(Event)
+        {
+            [JsonPropertyName("new_state")]
+            public string NewState { get; init; } = default!;
+        }
+        private record MopidyStreamTitleChangedMessage(string Event, string Title) : MopidyBaseMessage(Event);
+        private record MopidyBaseMessage(string Event);
 
         public async Task<StateDto> GetState()
         {
@@ -55,18 +152,18 @@ namespace PiperPicker.Proxies
             return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
         }
 
-        public async Task<NowPlayingDto> GetNowPlaying()
-        {
-            var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
-            var stateResponseTask = MopidyPost("core.playback.get_state");
+        //public async Task<NowPlayingDto> GetNowPlaying()
+        //{
+        //    var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
+        //    var stateResponseTask = MopidyPost("core.playback.get_state");
 
-            var currentTrackResponse = await currentTrackResponseTask;
-            var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
-            // var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>() ?? new NowPlayingDto();
-            nowPlaying.NowPlayingDto.State = await stateResponseTask;
+        //    var currentTrackResponse = await currentTrackResponseTask;
+        //    var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
+        //    // var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>() ?? new NowPlayingDto();
+        //    nowPlaying.NowPlayingDto.State = await stateResponseTask;
 
-            return nowPlaying.NowPlayingDto;
-        }
+        //    return nowPlaying.NowPlayingDto;
+        //}
 
         public async Task<IList<MopidyItem>> GetEpisodes()
         {
@@ -97,8 +194,6 @@ namespace PiperPicker.Proxies
         public async Task Play()
         {
             await MopidyPost("core.playback.play");
-
-            RaiseEvent("play");
         }
 
         public async Task<string> TogglePause()
@@ -107,13 +202,11 @@ namespace PiperPicker.Proxies
             if (state.Result == "playing")
             {
                 await MopidyPost("core.playback.pause");
-                RaiseEvent("pause");
                 return "paused";
             }
             else
             {
                 await MopidyPost("core.playback.play");
-                RaiseEvent("play");
                 return "playing";
             }
         }
@@ -140,14 +233,9 @@ namespace PiperPicker.Proxies
             return responseContent;
         }
 
-        private void RaiseEvent(string info)
+        private void RaiseEvent(MopidyNowPlayingState mopidyNowPlayingState)
         {
-            OnMopidyNotification?.Invoke(null, new MopidyNotificationEventArgs("playepisode"));
-        }
-
-        public class PlayMopidyItemDto
-        {
-            public string Uri { get; set; }
+            OnMopidyNotification?.Invoke(null!, new MopidyNotificationEventArgs(mopidyNowPlayingState));
         }
 
         public class StateDto
@@ -181,6 +269,44 @@ namespace PiperPicker.Proxies
         {
             public string Name { get; set; }
             public string Uri { get; set; }
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    _cancellationTokenSource.Cancel();
+                    _monitorWebSocketTask.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
+        }
+
+        public delegate void MopidyNotificationEventHandler(object source, MopidyNotificationEventArgs e);
+
+        public record MopidyNowPlayingState(bool IsPlaying, string TrackName, string TrackDescription);
+
+        public class MopidyNotificationEventArgs : EventArgs
+        {
+            private MopidyNowPlayingState _mopidyNowPlayingState = null!;
+            public MopidyNotificationEventArgs(MopidyNowPlayingState mopidyNowPlayingState)
+            {
+                _mopidyNowPlayingState = mopidyNowPlayingState;
+            }
+            public MopidyNowPlayingState GetInfo()
+            {
+                return _mopidyNowPlayingState;
+            }
         }
     }
 }

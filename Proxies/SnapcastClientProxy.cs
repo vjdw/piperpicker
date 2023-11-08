@@ -13,30 +13,10 @@ using Microsoft.Extensions.Logging;
 
 namespace PiperPicker.Proxies
 {
-    public record Volume(bool Muted, int Percent);
-    public record Config(string Name, Volume Volume);
-    public record SnapcastClient(string Id, Config Config, bool Connected)
-    {
-        public static SnapcastClient BuildDefault(string Id) => new SnapcastClient(Id, new Config(Id, new Volume(false, 0)), false);
-    }
-
-    public delegate void SnapcastClientNotificationEventHandler(object source, SnapcastClientNotificationEventArgs e);
-
-    public class SnapcastClientNotificationEventArgs : EventArgs
-    {
-        private SnapcastClient ClientState;
-        public SnapcastClientNotificationEventArgs(SnapcastClient snapcastClientState)
-        {
-            ClientState = snapcastClientState;
-        }
-        public SnapcastClient GetClientState()
-        {
-            return ClientState;
-        }
-    }
-
     public class SnapcastClientProxy
     {
+        public delegate void SnapcastClientNotificationEventHandler(object source, SnapcastClientNotificationEventArgs e);
+
         private JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -292,6 +272,26 @@ namespace PiperPicker.Proxies
                     }
                     return "{}";
                 }
+            }
+        }
+
+        public record Volume(bool Muted, int Percent);
+        public record Config(string Name, Volume Volume);
+        public record SnapcastClient(string Id, Config Config, bool Connected)
+        {
+            public static SnapcastClient BuildDefault(string Id) => new SnapcastClient(Id, new Config(Id, new Volume(false, 0)), false);
+        }
+
+        public class SnapcastClientNotificationEventArgs : EventArgs
+        {
+            private SnapcastClient ClientState;
+            public SnapcastClientNotificationEventArgs(SnapcastClient snapcastClientState)
+            {
+                ClientState = snapcastClientState;
+            }
+            public SnapcastClient GetClientState()
+            {
+                return ClientState;
             }
         }
     }
