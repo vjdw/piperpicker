@@ -6,19 +6,16 @@
 @inject MopidyProxy MopidyProxy
 @inject ILogger<NowPlayingControl> Logger
 
-<div class="stackable">
-    @if (_mopidyNowPlayingState != null)
-    {
-        <p>@_mopidyNowPlayingState.TrackName</p>
-        <p>@_mopidyNowPlayingState.TrackDescription</p>
-        <p>Playing: @_mopidyNowPlayingState.IsPlaying</p>
-    }
+<div class="stackable" @onclick="PauseButtonClickHandler">
+    <p>@_mopidyNowPlayingState.TrackName</p>
+    <p>@_mopidyNowPlayingState.TrackDescription</p>
+    <p>Playing: @_mopidyNowPlayingState.IsPlaying</p>
 </div>
 
 @code {
     private ClientWebSocket _cws;
     private Timer _timer;
-    private MopidyNowPlayingState _mopidyNowPlayingState = null;
+    private MopidyNowPlayingState _mopidyNowPlayingState = new MopidyNowPlayingState(false, "-", "-");
 
     protected async override void OnAfterRender(bool firstRender)
     {
@@ -37,5 +34,10 @@
             _mopidyNowPlayingState = notification.GetInfo();
             StateHasChanged();
         });
+    }
+
+    private async void PauseButtonClickHandler()
+    {
+        await MopidyProxy.TogglePause();
     }
 }

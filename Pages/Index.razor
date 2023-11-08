@@ -2,9 +2,17 @@
 @using piperpicker.Components
 @using PiperPicker.Proxies
 
-<VolumeControl></VolumeControl>
-<ListSelector></ListSelector>
-<NowPlayingControl></NowPlayingControl>
+<div id="layout-sections">
+    <div id="volume-section">
+        <VolumeControl></VolumeControl>
+    </div>
+    <div id="list-section">
+        <ListSelector></ListSelector>
+    </div>
+    <div id="nowplaying-section">
+        <NowPlayingControl></NowPlayingControl>
+    </div>
+</div>
 
 @code {
 

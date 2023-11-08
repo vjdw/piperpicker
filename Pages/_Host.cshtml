@@ -7,6 +7,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <base href="~/" />
     <link href="css/site.css" rel="stylesheet" />
     <link href="piperpicker.styles.css" rel="stylesheet" />
@@ -29,3 +30,9 @@
     <script src="_framework/blazor.server.js"></script>
 </body>
 </html>
+<script>
+    window.addEventListener('resize', () => {
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${vh}px`);
+    });
+</script>

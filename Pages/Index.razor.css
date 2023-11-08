@@ -1,2 +1,29 @@
 ﻿body {
 }
+
+#main {
+    
+}
+
+#layout-sections {
+    height: 100%;
+    height: calc(var(--vh, 1vh) * 100);
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+}
+
+#volume-section {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+#list-section {
+    grid-column: 1;
+    grid-row: 2;
+    overflow: auto;
+}
+
+#nowplaying-section {
+    grid-column: 1;
+    grid-row: 3;
+}

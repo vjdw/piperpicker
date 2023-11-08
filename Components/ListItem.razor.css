@@ -16,7 +16,6 @@
     cursor: pointer;
     display: inline-block;
     font-family: -apple-system, system-ui, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
-    font-size: 14px;
     font-weight: 500;
     line-height: 20px;
     list-style: none;
@@ -63,4 +62,10 @@
 
 .button-4:-webkit-details-marker {
     display: none;
+}
+
+@media (max-width:600px) {
+    #radio-list > .list-item {
+        width: 25%;
+    }
 }

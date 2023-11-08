@@ -47,7 +47,11 @@
                 .OrderBy(_ => _.Name)
                 .ToList();
 
-            _episodes = await episodesTask;
+            var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"];
+            _episodes = (await episodesTask)
+                .Where(_ => _.Name.StartsWith(episodeNameFilter))
+                .OrderByDescending(_ => _.Name)
+                .ToList();
 
             StateHasChanged();
         }

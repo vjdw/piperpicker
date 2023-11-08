@@ -1,8 +1,4 @@
-﻿body {
-}
-
-
-#list-container {
+﻿#list-container {
     display: flex;
     width: 100%;
     flex-direction: row;
@@ -10,15 +6,30 @@
 }
 
 #radio-list {
-    background-color: #855;
+    background-color: var(--pp-background-darker);
     min-width: 12rem;
+    text-align: center;
 }
 
 #episode-list {
-    overflow-y: scroll;
-    background-color: #585;
+    overflow-y: auto;
+    background-color: var(--pp-background-darkest);
     width: 100%;
+    text-align: center;
 }
 
-div.content-list {
+.content-list {
+}
+
+@media (max-width:600px) {
+    #list-container {
+        flex-direction: column;
+    }
+
+    #radio-list {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+    }
 }

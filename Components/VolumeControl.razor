@@ -2,30 +2,37 @@
 @using PiperPicker.Proxies
 @using static PiperPicker.Proxies.SnapcastClientProxy;
 @inject SnapcastClientProxy SnapcastClientProxy
+@inject IConfiguration Configuration
 
 <div class="stackable">
-    <input id="volume-slider" type="range" min="0" max="100" step="1" @onchange="VolumeChangeEventHandler" value="@_snapClient.Config.Volume.Percent" class="slider">
+    <input id="volume-slider" type="range" min="0" max="100" step="1" @onchange="VolumeChangeEventHandler" value="@Volume" class="slider">
 </div>
 
 @code {
     // private const string _snapcastKitchenId = "b8:27:eb:d2:ae:1b"; // xyzzy make this configurable
-    private const string _snapcastKitchenId = "5db9e0b4-c6d9-4372-9ef6-1e615e9d805b";
-    private SnapcastClient _snapClient = SnapcastClient.BuildDefault(_snapcastKitchenId);
+    private string _volumeControlClientId; //"5db9e0b4-c6d9-4372-9ef6-1e615e9d805b"; // xyzzy office not kitchen
+    private SnapcastClient _snapClient = default!;
+
+    int Volume => _snapClient?.Config.Volume.Percent ?? 0;
 
     protected override void OnAfterRender(bool firstRender)
     {
-        base.OnAfterRender(firstRender);
-
         if (firstRender)
         {
+            _volumeControlClientId = Configuration["SnapcastServer:VolumeControlClientId"];
+            _snapClient = SnapcastClient.BuildDefault(_volumeControlClientId);
+
             SnapcastClientProxy.OnSnapNotification += SnapNotificationEventHandler;
-            if (SnapcastClientProxy.TryGetSnapClient(_snapcastKitchenId, out var snapclient))
+            if (SnapcastClientProxy.TryGetSnapClient(_volumeControlClientId, out var snapclient))
             {
                 _snapClient = snapclient;
                 StateHasChanged();
             }
-            SnapcastClientProxy.MonitorClient(_snapcastKitchenId);
+            SnapcastClientProxy.MonitorClient(_volumeControlClientId);
         }
+
+        base.OnAfterRender(firstRender);
+
     }
 
     private void SnapNotificationEventHandler(object sender, SnapcastClientNotificationEventArgs snapNotification)
@@ -40,7 +47,7 @@
     {
         if (int.TryParse(volumeChangeEvent.Value?.ToString(), out int volume))
         {
-            SnapcastClientProxy.SetVolume(_snapcastKitchenId, volume);
+            SnapcastClientProxy.SetVolume(_volumeControlClientId, volume);
         }
     }
 }

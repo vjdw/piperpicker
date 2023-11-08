@@ -1,17 +1,20 @@
 :root {
-    --pp-background-color: #fdf6e3;
-    --pp-accent-color: #268bd2;
+    --pp-background: #fdf6e3;
+    --pp-background-darker: #ede6d3;
+    --pp-background-darkest: #ddd6c3;
+    --pp-accent: #268bd2;
 }
 
 body {
     font-family: Arial, Helvetica, sans-serif;
-    background: var(--pp-background-color);
+    background: var(--pp-background);
     margin: 0;
     height: 100%;
 }
 
 main {
-    height: 100vh;
+    height: 100vh; /* Fallback for browsers that do not support Custom Properties */
+    height: calc(var(--vh, 1vh) * 100);
     display: flex;
     flex-direction: column;
 }
@@ -21,7 +24,7 @@ main {
 }
 
 #blazor-error-ui {
-    background: var(--pp-background-color);
+    background: var(--pp-background);
     bottom: 0;
     box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
     display: none;
@@ -48,3 +51,14 @@ main {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
+
+/*@media (max-width:951px) {
+    body {
+        font-size: 18px;
+        zoom: 1.5;
+    }
+
+    input {
+        font-size: 18px;
+    }
+}*/
