@@ -7,7 +7,7 @@
 @inject IConfiguration Configuration
 @inject MopidyProxy MopidyProxy
 
-<div id="list-container" class="stackable">
+<div id="radio-container" class="stackable">
 
     @if (_radioStations != null)
     {
@@ -19,38 +19,20 @@
         </div>
     }
 
-    @if (_episodes != null)
-    {
-        <div id="episode-list" class="content-list">
-            <Virtualize Items="@_episodes" Context="episode">
-                <ListItem MopidyItem=episode></ListItem>
-            </Virtualize>
-        </div>
-    }
-
 </div>
 
 @code {
-    IList<MopidyItem> _episodes = default!;
     IList<MopidyItem> _radioStations = default!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            var episodesTask = MopidyProxy.GetEpisodes();
-
             _radioStations = Configuration
                 .GetSection("Mopidy:RadioStreams")
                 .GetChildren()
                 .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
                 .OrderBy(_ => _.Name)
-                .ToList();
-
-            var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"];
-            _episodes = (await episodesTask)
-                .Where(_ => _.Name.StartsWith(episodeNameFilter))
-                .OrderByDescending(_ => _.Name)
                 .ToList();
 
             StateHasChanged();

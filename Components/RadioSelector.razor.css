@@ -1,4 +1,4 @@
-﻿#list-container {
+﻿#radio-container {
     display: flex;
     width: 100%;
     flex-direction: row;
@@ -6,23 +6,12 @@
 }
 
 #radio-list {
-    background-color: var(--pp-background-darker);
     min-width: 12rem;
     text-align: center;
 }
 
-#episode-list {
-    overflow-y: auto;
-    background-color: var(--pp-background-darkest);
-    width: 100%;
-    text-align: center;
-}
-
-.content-list {
-}
-
 @media (max-width:600px) {
-    #list-container {
+    #radio-container {
         flex-direction: column;
     }
 

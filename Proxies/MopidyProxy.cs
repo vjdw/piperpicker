@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using static PiperPicker.Proxies.MopidyProxy;
 
 namespace PiperPicker.Proxies
 {
@@ -99,11 +100,12 @@ namespace PiperPicker.Proxies
                                         _mopidyNowPlayingState = _mopidyNowPlayingState with { IsPlaying = playbackStateChangedMessage!.NewState == "playing" };
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
-                                    else if (message.Event == "track_playback_started")
+                                    else if (new[] { "track_playback_started", "track_playback_paused", "track_playback_resumed" }.Contains(message.Event))
                                     {
                                         var playbackStartedMessage = JsonSerializer.Deserialize<MopidyTrackPlaybackStartedMessage>(messageJson, _serialiserOptions);
+                                        var nowPlayingDisplayName = GetNowPlayingDisplayName(playbackStartedMessage?.TlTrack.Track);
 
-                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = playbackStartedMessage!.TlTrack.Track.Name, TrackDescription = playbackStartedMessage.TlTrack.Track.Comment };
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? ""};
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
                                     else if (message.Event == "stream_title_changed")
@@ -113,7 +115,6 @@ namespace PiperPicker.Proxies
                                         _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackDescription = streamTitleChangedMessage!.Title };
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
-                                    // {"title": "High And Dry - Radiohead", "event": "stream_title_changed"}
                                 }
                             }
                         }
@@ -152,18 +153,43 @@ namespace PiperPicker.Proxies
             return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
         }
 
-        //public async Task<NowPlayingDto> GetNowPlaying()
-        //{
-        //    var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
-        //    var stateResponseTask = MopidyPost("core.playback.get_state");
+        public async Task<MopidyNowPlayingState> GetNowPlaying()
+        {
+            var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
+            var stateResponseTask = MopidyPost("core.playback.get_state");
 
-        //    var currentTrackResponse = await currentTrackResponseTask;
-        //    var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
-        //    // var nowPlaying = mopidyResponse["result"].ToObject<NowPlayingDto>() ?? new NowPlayingDto();
-        //    nowPlaying.NowPlayingDto.State = await stateResponseTask;
+            var currentTrackResponse = await currentTrackResponseTask;
+            var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
 
-        //    return nowPlaying.NowPlayingDto;
-        //}
+            var state = await stateResponseTask;
+            var stateResponse = JsonSerializer.Deserialize<StateDto>(state, _serialiserOptions);
+            var isPlaying = (stateResponse?.Result ?? "") == "playing";
+            var nowPlayingName = GetNowPlayingDisplayName(nowPlaying);
+
+            return new MopidyNowPlayingState(isPlaying, nowPlayingName, nowPlaying?.Result?.Comment ?? "");
+        }
+
+        private string GetNowPlayingDisplayName(NowPlayingResponse? nowPlayingResponse)
+        {
+            var nowPlayingName = nowPlayingResponse?.Result?.Name ?? "";
+            if (string.IsNullOrWhiteSpace(nowPlayingName))
+            {
+                nowPlayingName = nowPlayingResponse?.Result?.Uri ?? "";
+                nowPlayingName = nowPlayingName?.Split('/').Last().Split('.').First().Split('%').First().Replace('_', ' ').Replace('-', ' ') ?? "";
+            }
+            return nowPlayingName;
+        }
+
+        private string GetNowPlayingDisplayName(MopidyTrack? mopidyTrack)
+        {
+            var nowPlayingName = mopidyTrack?.Name ?? "";
+            if (string.IsNullOrWhiteSpace(nowPlayingName))
+            {
+                nowPlayingName = mopidyTrack?.Uri ?? "";
+                nowPlayingName = nowPlayingName?.Split('/').Last().Split('.').First().Split('%').First().Replace('_', ' ').Replace('-', ' ') ?? "";
+            }
+            return nowPlayingName;
+        }
 
         public async Task<IList<MopidyItem>> GetEpisodes()
         {
@@ -245,7 +271,7 @@ namespace PiperPicker.Proxies
 
         public class NowPlayingResponse
         {
-            public NowPlayingDto NowPlayingDto { get; set; }
+            public NowPlayingDto Result { get; set; }
         }
 
         public class NowPlayingDto
@@ -278,7 +304,6 @@ namespace PiperPicker.Proxies
                 if (disposing)
                 {
                     _cancellationTokenSource.Cancel();
-                    _monitorWebSocketTask.Dispose();
                 }
 
                 disposedValue = true;

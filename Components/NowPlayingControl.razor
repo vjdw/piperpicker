@@ -7,21 +7,28 @@
 @inject ILogger<NowPlayingControl> Logger
 
 <div class="stackable" @onclick="PauseButtonClickHandler">
-    <p>@_mopidyNowPlayingState.TrackName</p>
-    <p>@_mopidyNowPlayingState.TrackDescription</p>
-    <p>Playing: @_mopidyNowPlayingState.IsPlaying</p>
+    <div>
+        <span id="trackname">@_mopidyNowPlayingState.TrackName</span>
+        <br />
+        <span id="trackdescription">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
+    </div>
+
+    <div>
+        <div class="icon playpause @playPauseIconState"></div>
+    </div>
 </div>
 
 @code {
-    private ClientWebSocket _cws;
-    private Timer _timer;
     private MopidyNowPlayingState _mopidyNowPlayingState = new MopidyNowPlayingState(false, "-", "-");
+    private string playPauseIconState = "pause";
 
     protected async override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
+            HandleNewState(await MopidyProxy.GetNowPlaying());
             MopidyProxy.OnMopidyNotification += MopidyNotificationHandler;
+            StateHasChanged();
         }
 
         base.OnAfterRender(firstRender);
@@ -31,9 +38,15 @@
     {
         InvokeAsync(() =>
         {
-            _mopidyNowPlayingState = notification.GetInfo();
+            HandleNewState(notification.GetInfo());
             StateHasChanged();
         });
+    }
+
+    private void HandleNewState(MopidyNowPlayingState mopidyNowPlayingState)
+    {
+        _mopidyNowPlayingState = mopidyNowPlayingState;
+        playPauseIconState = _mopidyNowPlayingState.IsPlaying ? "pause" : "play";
     }
 
     private async void PauseButtonClickHandler()

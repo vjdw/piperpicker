@@ -1,1 +1,30 @@
-﻿
+﻿.stackable {
+    padding: 1rem;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#trackname {
+}
+
+#trackdescription {
+    color: #888;
+}
+
+.icon {
+    width: 3em;
+    height: 3em;
+    transition: all .15s ease-in-out;
+    background-repeat: no-repeat !important;
+}
+
+    .icon.playpause.play {
+        background: url("/images/play.svg");
+        background-size: cover;
+    }
+
+    .icon.playpause.pause {
+        background: url("/images/pause.svg");
+        background-size: cover;
+    }

@@ -9,8 +9,7 @@
 </div>
 
 @code {
-    // private const string _snapcastKitchenId = "b8:27:eb:d2:ae:1b"; // xyzzy make this configurable
-    private string _volumeControlClientId; //"5db9e0b4-c6d9-4372-9ef6-1e615e9d805b"; // xyzzy office not kitchen
+    private string _volumeControlClientId;
     private SnapcastClient _snapClient = default!;
 
     int Volume => _snapClient?.Config.Volume.Percent ?? 0;

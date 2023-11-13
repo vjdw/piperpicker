@@ -1,0 +1,20 @@
+﻿#episodes-container {
+    display: flex;
+    width: 100%;
+    flex-direction: row;
+    min-height: 0;
+}
+
+#episode-list {
+    overflow-y: auto;
+    overflow-x: hidden;
+    background-color: var(--pp-background-darkest);
+    width: 100%;
+    text-align: center;
+}
+
+@media (max-width:600px) {
+    #episodes-container {
+        flex-direction: column;
+    }
+}
