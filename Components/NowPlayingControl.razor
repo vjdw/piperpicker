@@ -19,7 +19,7 @@
 </div>
 
 @code {
-    private MopidyNowPlayingState _mopidyNowPlayingState = new MopidyNowPlayingState(false, "-", "-");
+    private MopidyNowPlayingState _mopidyNowPlayingState = new MopidyNowPlayingState(false, "-", "-", "file:///");
     private string playPauseIconState = "pause";
 
     protected async override void OnAfterRender(bool firstRender)

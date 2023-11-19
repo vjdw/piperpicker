@@ -2,7 +2,8 @@
 @using PiperPicker.Models;
 @using piperpicker.Components
 @using PiperPicker.Proxies
-@using static PiperPicker.Proxies.MopidyProxy;
+@using static PiperPicker.Proxies.MopidyProxy
+@implements IDisposable
 
 @inject IConfiguration Configuration
 @inject MopidyProxy MopidyProxy
@@ -27,18 +28,37 @@
     {
         if (firstRender)
         {
-            var episodes = await MopidyProxy.GetEpisodes();
+            MopidyProxy.OnMopidyEpisodeListNotification += MopidyEpisodeListNotificationHandler;
 
-
-            var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"];
-            _episodes = episodes
-                .Where(_ => _.Name.StartsWith(episodeNameFilter))
-                .OrderByDescending(_ => _.Name)
-                .ToList();
+            await LoadEpisodeList();
 
             StateHasChanged();
         }
 
         await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task LoadEpisodeList()
+    {
+        var episodes = await MopidyProxy.GetEpisodes();
+        var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"];
+        _episodes = episodes?
+            .Where(_ => _.Name.StartsWith(episodeNameFilter))
+            .OrderByDescending(_ => _.Name)
+            .ToList() ?? new List<MopidyItem>();
+    }
+
+    private void MopidyEpisodeListNotificationHandler(object sender, MopidyEpisodeListNotificationEventArgs notification)
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadEpisodeList();
+            StateHasChanged();
+        });
+    }
+
+    public void Dispose()
+    {
+        MopidyProxy.OnMopidyEpisodeListNotification -= MopidyEpisodeListNotificationHandler;
     }
 }

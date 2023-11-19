@@ -9,12 +9,54 @@
 
 <div class="list-item">
     <span>@DisplayNameLeadingDate()</span>
-    <input type="button" class="list-item-button button-4" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
+    <input type="button" class="list-item-button button-4 @(isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
 </div>
 
 @code {
     [Parameter]
     public MopidyItem MopidyItem { get; set; }
+
+    private bool isPlaying = false;
+
+    protected async override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            HandleNewState(await MopidyProxy.GetNowPlaying());
+            MopidyProxy.OnMopidyNotification += MopidyNotificationHandler;
+            StateHasChanged();
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+    private void MopidyNotificationHandler(object sender, MopidyNotificationEventArgs notification)
+    {
+        InvokeAsync(() =>
+        {
+            HandleNewState(notification.GetInfo());
+            StateHasChanged();
+        });
+    }
+
+    private void HandleNewState(MopidyNowPlayingState mopidyNowPlayingState)
+    {
+        var isChange = false;
+
+        if (mopidyNowPlayingState.TrackUri == MopidyItem.Uri)
+        {
+            isChange = isPlaying == false;
+            isPlaying = true;
+        }
+        else
+        {
+            isChange = isPlaying == true;
+            isPlaying = false;
+        }
+
+        if (isChange)
+            StateHasChanged();
+    }
 
     private string DisplayName => MopidyItem.Name.Split('.').First().Replace("RadMac_", "").Replace("_", " ").Replace("*", "⭐");
 

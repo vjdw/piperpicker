@@ -1,5 +1,5 @@
 ﻿#radio-container {
-    display: flex;
+    display: list-item;
     width: 100%;
     flex-direction: row;
     min-height: 0;
