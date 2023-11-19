@@ -209,18 +209,25 @@ namespace PiperPicker.Proxies
         {
             var directoryToMonitor = Configuration["Mopidy:EpisodeList:Path"];
 
-            _fileSystemWatcher = new FileSystemWatcher(directoryToMonitor!);
-            _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
-            _fileSystemWatcher.Filter = "";
-            _fileSystemWatcher.IncludeSubdirectories = true;
-            _fileSystemWatcher.EnableRaisingEvents = true;
-            _fileSystemWatcher.InternalBufferSize = 1048576;
+            if (directoryToMonitor != null && Directory.Exists(directoryToMonitor))
+            {
+                _fileSystemWatcher = new FileSystemWatcher(directoryToMonitor!);
+                _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
+                _fileSystemWatcher.Filter = "";
+                _fileSystemWatcher.IncludeSubdirectories = true;
+                _fileSystemWatcher.EnableRaisingEvents = true;
+                _fileSystemWatcher.InternalBufferSize = 1048576;
 
-            _fileSystemWatcher.Created += (object sender, FileSystemEventArgs e) => { RaiseEpisodeListEvent(); };
-            _fileSystemWatcher.Renamed += (object sender, RenamedEventArgs e) => { RaiseEpisodeListEvent(); };
-            _fileSystemWatcher.Deleted += (object sender, FileSystemEventArgs e) => { RaiseEpisodeListEvent(); };
+                _fileSystemWatcher.Created += (object sender, FileSystemEventArgs e) => { RaiseEpisodeListEvent(); };
+                _fileSystemWatcher.Renamed += (object sender, RenamedEventArgs e) => { RaiseEpisodeListEvent(); };
+                _fileSystemWatcher.Deleted += (object sender, FileSystemEventArgs e) => { RaiseEpisodeListEvent(); };
 
-            Logger.LogInformation($"Monitoring directory '{directoryToMonitor}'");
+                Logger.LogInformation($"Monitoring directory '{directoryToMonitor}'");
+            }
+            else
+            {
+                Logger.LogError($"Cannot monitor directory '{directoryToMonitor}' because it does not exist");
+            }
         }
 
         public async Task<IList<MopidyItem>> GetEpisodes()

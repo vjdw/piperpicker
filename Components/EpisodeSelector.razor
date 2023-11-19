@@ -14,7 +14,7 @@
     {
         <div id="episode-list" class="content-list">
             <Virtualize Items="@_episodes" Context="episode">
-                <ListItem MopidyItem=episode></ListItem>
+                <ListItem @key=episode.Uri MopidyItem=episode></ListItem>
             </Virtualize>
         </div>
     }
