@@ -59,6 +59,15 @@
     display: none;
 }
 
+.list-item {
+    
+}
+
+span.hidden {
+    color: var(--pp-background-darkest);
+
+}
+
 .list-item-button {
 }
 

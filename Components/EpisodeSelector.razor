@@ -22,6 +22,8 @@
 </div>
 
 @code {
+    internal static string RandomRadmacIdentifier = "Random RadMac";
+
     IList<MopidyItem> _episodes = default!;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -42,10 +44,13 @@
     {
         var episodes = await MopidyProxy.GetEpisodes();
         var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"];
-        _episodes = episodes?
+
+        var randomRadMacListEntry = new List<MopidyItem> { new MopidyItem() { Name = RandomRadmacIdentifier, Uri = "https://0.0.0.0/random" } };
+        var orderedEpisodes = episodes?
             .Where(_ => _.Name.StartsWith(episodeNameFilter))
             .OrderByDescending(_ => _.Name)
-            .ToList() ?? new List<MopidyItem>();
+                ?? new List<MopidyItem>().AsEnumerable();
+        _episodes = randomRadMacListEntry.Union(orderedEpisodes).ToList();
     }
 
     private void MopidyEpisodeListNotificationHandler(object sender, MopidyEpisodeListNotificationEventArgs notification)

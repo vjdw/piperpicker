@@ -8,7 +8,7 @@
 @inject MopidyProxy MopidyProxy
 
 <div class="list-item">
-    <span>@DisplayNameLeadingDate()</span>
+    <span class=@DisplayNameLeadingDateClass()>@DisplayNameLeadingDate()</span>
     <input type="button" class="list-item-button button-4 @(isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
 </div>
 
@@ -76,14 +76,38 @@
 
     private string DisplayNameLeadingDate()
     {
-        var displayName = DisplayName;
-        var dateRegex = new Regex(@"\d\d\d\d-\d\d-\d\d");
-        var date = dateRegex.Match(displayName).Value;
-        return date;
+        if (MopidyItem.Name == EpisodeSelector.RandomRadmacIdentifier)
+        {
+            return "0000-00-00";
+        }
+        else
+        {
+            var displayName = DisplayName;
+            var dateRegex = new Regex(@"\d\d\d\d-\d\d-\d\d");
+            var date = dateRegex.Match(displayName).Value;
+            return date;
+        }
+    }
+
+    private string DisplayNameLeadingDateClass()
+    {
+        if (MopidyItem.Name == EpisodeSelector.RandomRadmacIdentifier)
+        {
+            return "hidden";
+        }
+
+        return string.Empty;
     }
 
     private async Task ItemClickHandler()
     {
-        await MopidyProxy.PlayEpisode(MopidyItem.Uri);
+        if (MopidyItem.Name == EpisodeSelector.RandomRadmacIdentifier)
+        {
+            await MopidyProxy.PlayRandomEpisode();
+        }
+        else
+        {
+            await MopidyProxy.PlayEpisode(MopidyItem.Uri);
+        }
     }
 }
