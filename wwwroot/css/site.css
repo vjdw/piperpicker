@@ -11,6 +11,8 @@
     --pp-blue: #268bd2;
     --pp-accent-original: #268bd2;
     --pp-accent: var(--pp-blue);
+
+    --brightness-hover: 110%;
 }
 
 html,

@@ -68,7 +68,7 @@
     }
 
         .list-item-button.is-playing:hover {
-            filter: brightness(1.1);
+            filter: brightness(var(--brightness-hover));
         }
 
 @media (max-width:600px) {
