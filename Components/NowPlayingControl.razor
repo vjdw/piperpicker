@@ -6,15 +6,17 @@
 @inject MopidyProxy MopidyProxy
 @inject ILogger<NowPlayingControl> Logger
 
-<div class="stackable" @onclick="PauseButtonClickHandler">
+<div class="stackable">
     <div>
         <span id="trackname">@_mopidyNowPlayingState.TrackName</span>
         <br />
         <span id="trackdescription">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
     </div>
 
-    <div>
-        <div class="icon playpause @playPauseIconState"></div>
+    <div class="icons-container">
+        <div class="icon seek-back" @onclick="SeekBackButtonClickHandler"></div>
+        <div class="icon seek-forward" @onclick="SeekForwardButtonClickHandler"></div>
+        <div class="icon playpause @playPauseIconState" @onclick="PauseButtonClickHandler"></div>
     </div>
 </div>
 
@@ -52,5 +54,14 @@
     private async void PauseButtonClickHandler()
     {
         await MopidyProxy.TogglePause();
+    }
+
+    private async void SeekBackButtonClickHandler()
+    {
+        await MopidyProxy.SeekRelative(-20000);
+    }
+    private async void SeekForwardButtonClickHandler()
+    {
+        await MopidyProxy.SeekRelative(10000);
     }
 }

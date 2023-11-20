@@ -1,8 +1,14 @@
 ﻿.stackable {
     padding: 1rem;
+    max-height: 3rem;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+}
+
+.icons-container {
+    display: flex;
+    flex-direction: row;
 }
 
 #trackname {
@@ -17,6 +23,7 @@
     height: 3em;
     transition: all .15s ease-in-out;
     background-repeat: no-repeat !important;
+    margin-left: 2rem;
 }
 
     .icon.playpause.play {
@@ -26,5 +33,15 @@
 
     .icon.playpause.pause {
         background: url("/images/pause.svg");
+        background-size: cover;
+    }
+
+    .icon.seek-back {
+        background: url("/images/seek-back.svg");
+        background-size: cover;
+    }
+
+    .icon.seek-forward {
+        background: url("/images/seek-forward.svg");
         background-size: cover;
     }

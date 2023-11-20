@@ -277,6 +277,17 @@ namespace PiperPicker.Proxies
             }
         }
 
+        public async Task SeekRelative(int seekMs)
+        {
+            var responseContent = await MopidyPost("core.playback.get_time_position");
+            var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(responseContent, _serialiserOptions);
+            if (timePositionResponse != null)
+            {
+                var newPositionMs = timePositionResponse.Result + seekMs;
+                await MopidyPost("core.playback.seek", seekPositionMs: newPositionMs);
+            }
+        }
+
         private async Task<string> MopidyPost(string method, string[] targetUris)
         {
             var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris, _serialiserOptions)}}} }}";
@@ -288,9 +299,26 @@ namespace PiperPicker.Proxies
             return responseContent;
         }
 
-        private async Task<string> MopidyPost(string method, string targetUri = null)
+        private async Task<string> MopidyPost(string method)
         {
-            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" {(string.IsNullOrEmpty(targetUri) ? "" : $", \"params\":{{\"uri\":\"{targetUri}\"}}")} }}";
+            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" }}";
+            return await MopidyPostActual(requestContent);
+        }
+
+        private async Task<string> MopidyPost(string method, string targetUri)
+        {
+            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"uri\":\"{targetUri}\"}}"} }}";
+            return await MopidyPostActual(requestContent);            
+        }
+
+        private async Task<string> MopidyPost(string method, int seekPositionMs)
+        {
+            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"time_position\":{seekPositionMs}}}"} }}";
+            return await MopidyPostActual(requestContent);
+        }
+
+        private async Task<string> MopidyPostActual(string requestContent)
+        {
             var content = new StringContent(requestContent);
             content.Headers.Clear();
             content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
@@ -312,6 +340,11 @@ namespace PiperPicker.Proxies
         public class StateDto
         {
             public string Result { get; set; }
+        }
+
+        public class TimePositionResponse
+        {
+            public int Result { get; set; }
         }
 
         public class NowPlayingResponse

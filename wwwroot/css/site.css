@@ -4,6 +4,8 @@
     --pp-background-darkest: #ddd6c3;
     /* content */
     --pp-base01: #586e75;
+    --pp-base0: #839496;
+    --pp-base1: #93a1a1;
     /* background*/
     --pp-base2: #eee8d5;
     --pp-base3: #fdf6e3;
@@ -11,7 +13,6 @@
     --pp-blue: #268bd2;
     --pp-accent-original: #268bd2;
     --pp-accent: var(--pp-blue);
-
     --brightness-hover: 110%;
 }
 
