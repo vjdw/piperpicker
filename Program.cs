@@ -5,7 +5,8 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddHttpClient();
 
-// xyzzy can this be Singleton, like MopidyProxy?
+// Needs to be scoped to match how snapcast's JSON RPC calls work (the RPC sender doesn't receive notifications of that change).
+// So if piperpicker is open in multiple browsers, each needs its own instance of SnapcastClientProxy to correctly get notifications of volume change.
 builder.Services.AddScoped(sp => new SnapcastClientProxy(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<SnapcastClientProxy>>()));
 
 builder.Services.AddSingleton(sp => new MopidyProxy(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<MopidyProxy>>()));

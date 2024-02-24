@@ -30,10 +30,25 @@
     <script src="_framework/blazor.server.js" autostart="false"></script>
     <script>
         Blazor.start().then(() => {
-            Blazor.defaultReconnectionHandler._reconnectCallback = function (d) {
-                document.location.reload();
-            }
+            Blazor.defaultReconnectionHandler._reconnectionDisplay = {
+                show: () => { },
+                update: (d) => { },
+                rejected: (d) => document.location.reload()
+            };
         });
+
+        // Try to reduce tab being suspended by browser
+        // https://learn.microsoft.com/en-us/aspnet/core/signalr/javascript-client?view=aspnetcore-7.0&tabs=visual-studio#bsleep
+        var lockResolver;
+        if (navigator && navigator.locks && navigator.locks.request) {
+            const promise = new Promise((res) => {
+                lockResolver = res;
+            });
+
+            navigator.locks.request('unique_lock_name', { mode: "shared" }, () => {
+                return promise;
+            });
+        }
     </script>
 
 </body>

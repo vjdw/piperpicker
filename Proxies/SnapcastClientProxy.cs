@@ -66,7 +66,6 @@ namespace PiperPicker.Proxies
             {
                 client.Connect(SnapServerHost, SnapServerPort);
                 _stream = client.GetStream();
-                // xyzzy cancel this task when shutting down
                 Task.Run(() => MonitorStream());
             }
             catch

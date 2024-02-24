@@ -83,7 +83,6 @@ namespace PiperPicker.Proxies
                                 {
                                     messageJson = messageJson.Substring(0, messageJson.IndexOf('\0'));
                                 }
-                                Console.WriteLine(messageJson); // xyzzy remove
                                 var message = JsonSerializer.Deserialize<MopidyBaseMessage>(messageJson, _serialiserOptions);
 
                                 if (message != null)

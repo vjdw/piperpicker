@@ -1,6 +1,9 @@
 @using piperpicker.Components
 @using PiperPicker.Proxies
 @using static PiperPicker.Proxies.SnapcastClientProxy;
+
+@implements IDisposable;
+
 @inject SnapcastClientProxy SnapcastClientProxy
 @inject IConfiguration Configuration
 
@@ -32,6 +35,15 @@
 
         base.OnAfterRender(firstRender);
 
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            SnapcastClientProxy.OnSnapNotification -= SnapNotificationEventHandler;
+        }
+        catch { }
     }
 
     private void SnapNotificationEventHandler(object sender, SnapcastClientNotificationEventArgs snapNotification)

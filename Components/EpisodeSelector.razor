@@ -1,4 +1,4 @@
-@using Microsoft.AspNetCore.Components.Web.Virtualization
+﻿@using Microsoft.AspNetCore.Components.Web.Virtualization
 @using PiperPicker.Models;
 @using piperpicker.Components
 @using PiperPicker.Proxies
@@ -22,7 +22,7 @@
 </div>
 
 @code {
-    internal static string RandomRadmacIdentifier = "Random RadMac";
+    internal static string RandomRadmacIdentifier = "🎲 Random RadMac";
 
     IList<MopidyItem> _episodes = default!;
 
@@ -38,6 +38,15 @@
         }
 
         await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            MopidyProxy.OnMopidyEpisodeListNotification -= MopidyEpisodeListNotificationHandler;
+        }
+        catch { }
     }
 
     private async Task LoadEpisodeList()
@@ -60,10 +69,5 @@
             await LoadEpisodeList();
             StateHasChanged();
         });
-    }
-
-    public void Dispose()
-    {
-        MopidyProxy.OnMopidyEpisodeListNotification -= MopidyEpisodeListNotificationHandler;
     }
 }
