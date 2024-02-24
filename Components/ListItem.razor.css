@@ -1,6 +1,15 @@
 ﻿body {
 }
 
+.leading-date {
+    font-family: monospace;
+    vertical-align: middle;
+}
+
+.leading-date.hidden {
+    color: var(--pp-background-darkest);
+}
+
 .button-4 {
     appearance: none;
     background-color: var(--pp-base2);
@@ -12,7 +21,7 @@
     cursor: pointer;
     display: inline-block;
     font-weight: 500;
-    line-height: 20px;
+    line-height: 1.6rem;
     list-style: none;
     padding: 0.5rem 1.5rem 0.5rem 1.5rem;
     text-align: left;
@@ -62,11 +71,6 @@
 
 .list-item {
     
-}
-
-span.hidden {
-    color: var(--pp-background-darkest);
-
 }
 
 .list-item-button {
