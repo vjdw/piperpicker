@@ -2,7 +2,12 @@
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
+builder.Services
+    .AddServerSideBlazor()
+    .AddHubOptions(options =>
+    {
+        options.ClientTimeoutInterval = TimeSpan.FromMinutes(3);
+    });
 builder.Services.AddHttpClient();
 
 // Needs to be scoped to match how snapcast's JSON RPC calls work (the RPC sender doesn't receive notifications of that change).
