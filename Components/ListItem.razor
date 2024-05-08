@@ -11,22 +11,28 @@
 
 <div class="list-item">
     <span class=@DisplayNameLeadingDateClass()>@DisplayNameLeadingDate()</span>
-    <input type="button" class="list-item-button button-4 @(isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
+    <input type="button" class="list-item-button button-4 @(_isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
 </div>
 
 @code {
     [Parameter]
     public MopidyItem MopidyItem { get; set; }
 
-    private bool isPlaying = false;
+    private bool _isPlaying = false;
 
-    protected async override void OnAfterRender(bool firstRender)
+    protected override async Task OnInitializedAsync()
+    {
+        var mopidyNowPlayingState = await MopidyProxy.GetNowPlaying();
+        _isPlaying = IsThisItemPlaying(mopidyNowPlayingState);
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            HandleNewState(await MopidyProxy.GetNowPlaying());
             MopidyProxy.OnMopidyNotification += MopidyNotificationHandler;
-            StateHasChanged();
         }
 
         base.OnAfterRender(firstRender);
@@ -54,20 +60,22 @@
     {
         var isChange = false;
 
-        if (mopidyNowPlayingState.TrackUri == MopidyItem.Uri)
+        if (IsThisItemPlaying(mopidyNowPlayingState))
         {
-            isChange = isPlaying == false;
-            isPlaying = true;
+            isChange = _isPlaying == false;
+            _isPlaying = true;
         }
         else
         {
-            isChange = isPlaying == true;
-            isPlaying = false;
+            isChange = _isPlaying == true;
+            _isPlaying = false;
         }
 
         if (isChange)
             StateHasChanged();
     }
+
+    private bool IsThisItemPlaying(MopidyNowPlayingState mopidyNowPlayingState) => mopidyNowPlayingState.TrackUri == MopidyItem.Uri;
 
     private string DisplayName => MopidyItem.Name.Split('.').First().Replace("RadMac_", "").Replace("_", " ").Replace("*", "⭐");
 

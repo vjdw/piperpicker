@@ -27,7 +27,6 @@ namespace PiperPicker.Proxies
         private CancellationTokenSource _cancellationTokenSource;
         private MopidyNowPlayingState _mopidyNowPlayingState;
 
-
         public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<MopidyProxy> logger)
         {
             _client = httpClientFactory.CreateClient();

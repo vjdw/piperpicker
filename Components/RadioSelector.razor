@@ -22,22 +22,20 @@
 </div>
 
 @code {
-    IList<MopidyItem> _radioStations = default!;
+    IList<MopidyItem> _radioStations = null!;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override void OnInitialized()
     {
-        if (firstRender)
+        if (_radioStations == null)
         {
             _radioStations = Configuration
-                .GetSection("Mopidy:RadioStreams")
-                .GetChildren()
-                .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
-                .OrderBy(_ => _.Name)
-                .ToList();
-
-            StateHasChanged();
+                    .GetSection("Mopidy:RadioStreams")
+                    .GetChildren()
+                    .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
+                    .OrderBy(_ => _.Name)
+                    .ToList();
         }
 
-        await base.OnAfterRenderAsync(firstRender);
+        base.OnInitialized();
     }
 }

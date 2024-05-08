@@ -24,17 +24,23 @@
 @code {
     internal static string RandomRadmacIdentifier = "🎲 Random RadMac";
 
-    IList<MopidyItem> _episodes = default!;
+    private static IList<MopidyItem> _episodes = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_episodes == null)
+        {
+            await LoadEpisodeList();
+        }
+
+        await base.OnInitializedAsync();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
             MopidyProxy.OnMopidyEpisodeListNotification += MopidyEpisodeListNotificationHandler;
-
-            await LoadEpisodeList();
-
-            StateHasChanged();
         }
 
         await base.OnAfterRenderAsync(firstRender);

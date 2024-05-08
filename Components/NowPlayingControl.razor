@@ -18,21 +18,26 @@
     <div class="icons-container">
         <div class="icon seek-back" @onclick="SeekBackButtonClickHandler"></div>
         <div class="icon seek-forward" @onclick="SeekForwardButtonClickHandler"></div>
-        <div class="icon playpause @playPauseIconState" @onclick="PauseButtonClickHandler"></div>
+        <div class="icon playpause @_playPauseIconState" @onclick="PauseButtonClickHandler"></div>
     </div>
 </div>
 
 @code {
     private MopidyNowPlayingState _mopidyNowPlayingState = new MopidyNowPlayingState(false, "-", "-", "file:///");
-    private string playPauseIconState = "pause";
+    private string _playPauseIconState = "pause";
 
-    protected async override void OnAfterRender(bool firstRender)
+    protected override async Task OnInitializedAsync()
+    {
+        HandleNewState(await MopidyProxy.GetNowPlaying());
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
     {
         if (firstRender)
         {
-            HandleNewState(await MopidyProxy.GetNowPlaying());
             MopidyProxy.OnMopidyNotification += MopidyNotificationHandler;
-            StateHasChanged();
         }
 
         base.OnAfterRender(firstRender);
@@ -59,7 +64,7 @@
     private void HandleNewState(MopidyNowPlayingState mopidyNowPlayingState)
     {
         _mopidyNowPlayingState = mopidyNowPlayingState;
-        playPauseIconState = _mopidyNowPlayingState.IsPlaying ? "pause" : "play";
+        _playPauseIconState = _mopidyNowPlayingState.IsPlaying ? "pause" : "play";
     }
 
     private async void PauseButtonClickHandler()

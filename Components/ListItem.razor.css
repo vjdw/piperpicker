@@ -74,6 +74,9 @@
 }
 
 .list-item-button {
+    line-height: 24px;
+    text-shadow: rgba(0, 0, 0, 8%) 1px 1px 1px;
+    -webkit-font-smoothing: antialiased;
 }
 
     .list-item-button.is-playing {
@@ -92,8 +95,6 @@
 
     #radio-list input {
         padding: 0.4rem 1.2rem 0.4rem 1.2rem;
-        font-weight: 700;
-        font-size: x-small;
     }
 }
 
@@ -104,6 +105,5 @@
 
     #radio-list input {
         padding: 0.2rem 0.6rem 0.2rem 0.6rem;
-        font-size: xx-small;
     }
 }

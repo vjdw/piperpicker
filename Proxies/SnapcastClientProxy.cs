@@ -1,15 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace PiperPicker.Proxies
 {
@@ -74,29 +65,50 @@ namespace PiperPicker.Proxies
             }
         }
 
-        private record SnapVolumeParams(bool Muted, int Percent);
-        private record SnapVolumeMessageParams(string Id, SnapVolumeParams Volume);
-        private record SnapVolumeMessage(string Method, SnapVolumeMessageParams Params) : SnapBaseMessage(Method);
-        private record SnapBaseMessage(string Method);
-        private IEnumerable<SnapBaseMessage> ProcessSnapResponse(string response)
+        // DTOs for notifications, changes coming from other snap clients.
+        private record SnapVolume(bool Muted, int Percent);
+        private record SnapVolumeNotificationParams(string Id, SnapVolume Volume);
+        private record SnapVolumeNotification(string Method, SnapVolumeNotificationParams Params) : SnapBaseNotification(Method);
+        private record SnapBaseNotification(string Method);
+
+        // DTOs for responses from snap requests this client has made
+        private record SnapGetStatusResultClientConfig(SnapVolume Volume);
+        private record SnapGetStatusResultClient(string Id, SnapGetStatusResultClientConfig Config);
+        private record SnapGetStatusResult(SnapGetStatusResultClient Client);
+        private record SnapGetStatusResponse(string Id, SnapGetStatusResult Result) : SnapBaseResponse(Id);
+        private record SnapBaseResponse(string Id);
+
+        private IEnumerable<SnapVolumeNotificationParams> ProcessSnapResponse(string response)
         {
             var responseLines = response.Split("\r\n", StringSplitOptions.RemoveEmptyEntries);
 
-            IEnumerable<SnapBaseMessage> messages = (IEnumerable<SnapBaseMessage>)(responseLines
+            IEnumerable<SnapVolumeNotificationParams> messages = (IEnumerable<SnapVolumeNotificationParams>)(responseLines
                 .Select(responseLine =>
                     {
-                        var snapMessage = JsonSerializer.Deserialize<SnapBaseMessage>(responseLine, _serialiserOptions);
-                        if (snapMessage != null)
+                        if (responseLine.Contains("Client.GetStatus-"))
                         {
-                            return snapMessage.Method switch
+                            var snapMessage = JsonSerializer.Deserialize<SnapGetStatusResponse>(responseLine, _serialiserOptions);
+                            if (snapMessage == null)
                             {
-                                "Client.OnVolumeChanged" => JsonSerializer.Deserialize<SnapVolumeMessage>(responseLine, _serialiserOptions),
-                                _ => null
-                            };
+                                Logger.LogWarning($"The following GetStatus response could not be deserialized: '{responseLine}'");
+                                return null;
+                            }
+                            var client = snapMessage.Result.Client;
+                            return new SnapVolumeNotificationParams(client.Id, client.Config.Volume);
                         }
                         else
                         {
-                            return null;
+                            var snapMessage = JsonSerializer.Deserialize<SnapBaseNotification>(responseLine, _serialiserOptions);
+                            if (snapMessage == null)
+                            {
+                                Logger.LogWarning($"The following notification could not be deserialized: '{responseLine}'");
+                                return null;
+                            }
+                            return snapMessage.Method switch
+                            {
+                                "Client.OnVolumeChanged" => JsonSerializer.Deserialize<SnapVolumeNotification>(responseLine, _serialiserOptions)?.Params,
+                                _ => null
+                            };
                         }
                     })
                 .Where(_ => _ is not null)
@@ -128,18 +140,18 @@ namespace PiperPicker.Proxies
                                 var response = Encoding.ASCII.GetString(bytesToRead, 0, bytesRead);
 
                                 var messages = ProcessSnapResponse(response);
-                                foreach (SnapVolumeMessage message in messages.Where(m => m is SnapVolumeMessage))
+                                foreach (SnapVolumeNotificationParams message in messages.Where(m => m is SnapVolumeNotificationParams))
                                 {
-                                    if (message.Params.Id == _clientId)
+                                    if (message.Id == _clientId)
                                     {
-                                        var newClientVolume = new Volume(message.Params.Volume.Muted, message.Params.Volume.Percent);
+                                        var newClientVolume = new Volume(message.Volume.Muted, message.Volume.Percent);
                                         if (_clientState.Config.Volume != newClientVolume)
                                         {
                                             _clientState = _clientState with { Config = _clientState.Config with { Volume = newClientVolume } };
                                             OnSnapNotification?.Invoke(null!, new SnapcastClientNotificationEventArgs(_clientState));
                                         }
                                     }
-                                    Logger.LogInformation("ClientId {ClientId} changed", message.Params.Id);
+                                    Logger.LogInformation("ClientId {ClientId} changed", message.Id);
                                 }
                             }
                         }
@@ -204,6 +216,14 @@ namespace PiperPicker.Proxies
             return false;
         }
 
+        public void RequestStatus(string clientMac)
+        {
+            var request = BuildSnapRequest("Client.GetStatus", new { id = clientMac });
+            SendSnapRequest(request);
+
+            Logger.LogInformation($"Called GetStatus using clientMac '{clientMac}'");
+        }
+
         public void SetMute(string clientMac, bool muted)
         {
             object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { muted = muted } });
@@ -229,7 +249,7 @@ namespace PiperPicker.Proxies
         {
             dynamic requestObj = new
             {
-                id = Guid.NewGuid().ToString("N"),
+                id = $"{method}-{Guid.NewGuid():N}",
                 jsonrpc = "2.0",
                 method = method,
                 @params = @params ?? new { }

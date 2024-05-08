@@ -12,8 +12,8 @@
 </div>
 
 @code {
-    private string _volumeControlClientId;
-    private SnapcastClient _snapClient = default!;
+    private string? _volumeControlClientId;
+    private SnapcastClient _snapClient = null!;
 
     int Volume => _snapClient?.Config.Volume.Percent ?? 0;
 
@@ -22,19 +22,18 @@
         if (firstRender)
         {
             _volumeControlClientId = Configuration["SnapcastServer:VolumeControlClientId"];
+            if (string.IsNullOrEmpty(_volumeControlClientId))
+            {
+                throw new Exception($"Configuration does not contain a value for SnapcastServer:VolumeControlClientId, a target for the volume control");
+            }
             _snapClient = SnapcastClient.BuildDefault(_volumeControlClientId);
 
             SnapcastClientProxy.OnSnapNotification += SnapNotificationEventHandler;
-            if (SnapcastClientProxy.TryGetSnapClient(_volumeControlClientId, out var snapclient))
-            {
-                _snapClient = snapclient;
-                StateHasChanged();
-            }
             SnapcastClientProxy.MonitorClient(_volumeControlClientId);
+            SnapcastClientProxy.RequestStatus(_volumeControlClientId);
         }
 
         base.OnAfterRender(firstRender);
-
     }
 
     public void Dispose()
@@ -56,9 +55,12 @@
 
     private void VolumeChangeEventHandler(ChangeEventArgs volumeChangeEvent)
     {
-        if (int.TryParse(volumeChangeEvent.Value?.ToString(), out int volume))
+        if (!string.IsNullOrEmpty(_volumeControlClientId))
         {
-            SnapcastClientProxy.SetVolume(_volumeControlClientId, volume);
+            if (int.TryParse(volumeChangeEvent.Value?.ToString(), out int volume))
+            {
+                SnapcastClientProxy.SetVolume(_volumeControlClientId, volume);
+            }
         }
     }
 }
