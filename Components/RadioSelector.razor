@@ -1,0 +1,41 @@
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using PiperPicker.Models;
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@using static PiperPicker.Proxies.MopidyProxy;
+
+@inject IConfiguration Configuration
+@inject MopidyProxy MopidyProxy
+
+<div id="radio-container" class="stackable">
+
+    @if (_radioStations != null)
+    {
+        <div id="radio-list" class="content-list">
+            @foreach (var radioStation in _radioStations)
+            {
+                <ListItem MopidyItem=radioStation></ListItem>
+            }
+        </div>
+    }
+
+</div>
+
+@code {
+    IList<MopidyItem> _radioStations = null!;
+
+    protected override void OnInitialized()
+    {
+        if (_radioStations == null)
+        {
+            _radioStations = Configuration
+                    .GetSection("Mopidy:RadioStreams")
+                    .GetChildren()
+                    .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
+                    .OrderBy(_ => _.Name)
+                    .ToList();
+        }
+
+        base.OnInitialized();
+    }
+}

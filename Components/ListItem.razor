@@ -1,0 +1,132 @@
+﻿@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using PiperPicker.Models;
+@using System.Text.RegularExpressions;
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@using static PiperPicker.Proxies.MopidyProxy;
+
+@implements IDisposable;
+
+@inject MopidyProxy MopidyProxy
+
+<div class="list-item">
+    <span class=@DisplayNameLeadingDateClass()>@DisplayNameLeadingDate()</span>
+    <input type="button" class="list-item-button button-4 @(_isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
+</div>
+
+@code {
+    [Parameter]
+    public MopidyItem MopidyItem { get; set; }
+
+    private bool _isPlaying = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var mopidyNowPlayingState = await MopidyProxy.GetNowPlaying();
+        _isPlaying = IsThisItemPlaying(mopidyNowPlayingState);
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            MopidyProxy.OnMopidyNotification += MopidyNotificationHandler;
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            MopidyProxy.OnMopidyNotification -= MopidyNotificationHandler;
+        }
+        catch { }
+    }
+
+    private void MopidyNotificationHandler(object sender, MopidyNotificationEventArgs notification)
+    {
+        InvokeAsync(() =>
+        {
+            HandleNewState(notification.GetInfo());
+            StateHasChanged();
+        });
+    }
+
+    private void HandleNewState(MopidyNowPlayingState mopidyNowPlayingState)
+    {
+        var isChange = false;
+
+        if (IsThisItemPlaying(mopidyNowPlayingState))
+        {
+            isChange = _isPlaying == false;
+            _isPlaying = true;
+        }
+        else
+        {
+            isChange = _isPlaying == true;
+            _isPlaying = false;
+        }
+
+        if (isChange)
+            StateHasChanged();
+    }
+
+    private bool IsThisItemPlaying(MopidyNowPlayingState mopidyNowPlayingState) => mopidyNowPlayingState.TrackUri == MopidyItem.Uri;
+
+    private string DisplayName => MopidyItem.Name.Split('.').First().Replace("RadMac_", "").Replace("_", " ").Replace("*", "⭐");
+
+    private string DisplayNameWithoutLeadingDate()
+    {
+        var displayName = DisplayName;
+        var dateRegex = new Regex(@"\d\d\d\d-\d\d-\d\d");
+        var date = dateRegex.Match(displayName).Value;
+        var displayNameWithoutDate = string.IsNullOrWhiteSpace(date)
+            ? displayName
+            : displayName.Replace(date, "").Trim();
+
+        return string.IsNullOrWhiteSpace(displayNameWithoutDate)
+            ? date
+            : displayNameWithoutDate;
+    }
+
+    private string DisplayNameLeadingDate()
+    {
+        if (MopidyItem.Name == EpisodeSelector.RandomRadmacIdentifier)
+        {
+            return "0000-00-00";
+        }
+        else
+        {
+            var displayName = DisplayName;
+            var dateRegex = new Regex(@"\d\d\d\d-\d\d-\d\d");
+            var date = dateRegex.Match(displayName).Value;
+            return date;
+        }
+    }
+
+    private string DisplayNameLeadingDateClass()
+    {
+        if (MopidyItem.Name == EpisodeSelector.RandomRadmacIdentifier)
+        {
+            return "leading-date hidden";
+        }
+
+        return "leading-date";
+    }
+
+    private async Task ItemClickHandler()
+    {
+        if (MopidyItem.Name == EpisodeSelector.RandomRadmacIdentifier)
+        {
+            await MopidyProxy.PlayRandomEpisode();
+        }
+        else
+        {
+            await MopidyProxy.PlayEpisode(MopidyItem.Uri);
+        }
+    }
+}

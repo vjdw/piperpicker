@@ -1,0 +1,79 @@
+﻿@using Microsoft.AspNetCore.Components.Web.Virtualization
+@using PiperPicker.Models;
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@using static PiperPicker.Proxies.MopidyProxy
+@implements IDisposable
+
+@inject IConfiguration Configuration
+@inject MopidyProxy MopidyProxy
+
+<div id="episodes-container" class="stackable">
+
+    @if (_episodes != null)
+    {
+        <div id="episode-list" class="content-list">
+            <Virtualize Items="@_episodes" Context="episode">
+                <ListItem @key=episode.Uri MopidyItem=episode></ListItem>
+            </Virtualize>
+        </div>
+    }
+
+</div>
+
+@code {
+    internal static string RandomRadmacIdentifier = "🎲 Random RadMac";
+
+    private static IList<MopidyItem> _episodes = null!;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_episodes == null)
+        {
+            await LoadEpisodeList();
+        }
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            MopidyProxy.OnMopidyEpisodeListNotification += MopidyEpisodeListNotificationHandler;
+        }
+
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            MopidyProxy.OnMopidyEpisodeListNotification -= MopidyEpisodeListNotificationHandler;
+        }
+        catch { }
+    }
+
+    private async Task LoadEpisodeList()
+    {
+        var episodes = await MopidyProxy.GetEpisodes();
+        var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"];
+
+        var randomRadMacListEntry = new List<MopidyItem> { new MopidyItem() { Name = RandomRadmacIdentifier, Uri = "https://0.0.0.0/random" } };
+        var orderedEpisodes = episodes?
+            .Where(_ => _.Name.StartsWith(episodeNameFilter))
+            .OrderByDescending(_ => _.Name)
+                ?? new List<MopidyItem>().AsEnumerable();
+        _episodes = randomRadMacListEntry.Union(orderedEpisodes).ToList();
+    }
+
+    private void MopidyEpisodeListNotificationHandler(object sender, MopidyEpisodeListNotificationEventArgs notification)
+    {
+        InvokeAsync(async () =>
+        {
+            await LoadEpisodeList();
+            StateHasChanged();
+        });
+    }
+}

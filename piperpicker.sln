@@ -1,9 +1,9 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.29418.71
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.002.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "piperpicker", "piperpicker.csproj", "{346DD391-6AAF-434A-A9A1-B9ACEF6EABD8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "piperpicker", "piperpicker.csproj", "{70AC2E2F-A013-4929-A835-7253C61D7663}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{346DD391-6AAF-434A-A9A1-B9ACEF6EABD8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{346DD391-6AAF-434A-A9A1-B9ACEF6EABD8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{346DD391-6AAF-434A-A9A1-B9ACEF6EABD8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{346DD391-6AAF-434A-A9A1-B9ACEF6EABD8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70AC2E2F-A013-4929-A835-7253C61D7663}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70AC2E2F-A013-4929-A835-7253C61D7663}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70AC2E2F-A013-4929-A835-7253C61D7663}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70AC2E2F-A013-4929-A835-7253C61D7663}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {C5587EFB-CD81-458E-813C-ECAE8D0526B6}
+		SolutionGuid = {95DD9FE0-A461-49FA-B58B-F7A2705805F1}
 	EndGlobalSection
 EndGlobal

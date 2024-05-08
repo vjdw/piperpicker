@@ -1,29 +1,25 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
+﻿using PiperPicker.Proxies;
 
-namespace PiperPicker
-{
-    public class Program
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddRazorPages();
+builder.Services
+    .AddServerSideBlazor()
+    .AddHubOptions(options =>
     {
-        public static void Main(string[] args)
-        {
-            CreateWebHostBuilder(args).Build().Run();
-        }
+        options.ClientTimeoutInterval = TimeSpan.FromMinutes(3);
+    });
+builder.Services.AddHttpClient();
 
-        public static IWebHostBuilder CreateWebHostBuilder(string[] args) => 
-            WebHost.CreateDefaultBuilder(args)
-                .ConfigureLogging(logging =>
-                {
-                    logging.AddConsole();
-                })
-                .UseUrls("http://0.0.0.0:5002/")
-                .UseStartup<Startup>();
-    }
-}
+// Needs to be scoped to match how snapcast's JSON RPC calls work (the RPC sender doesn't receive notifications of that change).
+// So if piperpicker is open in multiple browsers, each needs its own instance of SnapcastClientProxy to correctly get notifications of volume change.
+builder.Services.AddScoped(sp => new SnapcastClientProxy(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<SnapcastClientProxy>>()));
+
+builder.Services.AddSingleton(sp => new MopidyProxy(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<MopidyProxy>>()));
+
+var app = builder.Build();
+app.UseStaticFiles();
+app.UseRouting();
+app.MapBlazorHub();
+app.MapFallbackToPage("/_Host");
+
+app.Run();

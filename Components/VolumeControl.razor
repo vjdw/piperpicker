@@ -1,0 +1,66 @@
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@using static PiperPicker.Proxies.SnapcastClientProxy;
+
+@implements IDisposable;
+
+@inject SnapcastClientProxy SnapcastClientProxy
+@inject IConfiguration Configuration
+
+<div class="stackable">
+    <input id="volume-slider" type="range" min="0" max="100" step="1" @onchange="VolumeChangeEventHandler" value="@Volume" class="slider">
+</div>
+
+@code {
+    private string? _volumeControlClientId;
+    private SnapcastClient _snapClient = null!;
+
+    int Volume => _snapClient?.Config.Volume.Percent ?? 0;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _volumeControlClientId = Configuration["SnapcastServer:VolumeControlClientId"];
+            if (string.IsNullOrEmpty(_volumeControlClientId))
+            {
+                throw new Exception($"Configuration does not contain a value for SnapcastServer:VolumeControlClientId, a target for the volume control");
+            }
+            _snapClient = SnapcastClient.BuildDefault(_volumeControlClientId);
+
+            SnapcastClientProxy.OnSnapNotification += SnapNotificationEventHandler;
+            SnapcastClientProxy.MonitorClient(_volumeControlClientId);
+            SnapcastClientProxy.RequestStatus(_volumeControlClientId);
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            SnapcastClientProxy.OnSnapNotification -= SnapNotificationEventHandler;
+        }
+        catch { }
+    }
+
+    private void SnapNotificationEventHandler(object sender, SnapcastClientNotificationEventArgs snapNotification)
+    {
+        InvokeAsync(() => {
+            _snapClient = snapNotification.GetClientState();
+            StateHasChanged();
+        });
+    }
+
+    private void VolumeChangeEventHandler(ChangeEventArgs volumeChangeEvent)
+    {
+        if (!string.IsNullOrEmpty(_volumeControlClientId))
+        {
+            if (int.TryParse(volumeChangeEvent.Value?.ToString(), out int volume))
+            {
+                SnapcastClientProxy.SetVolume(_volumeControlClientId, volume);
+            }
+        }
+    }
+}

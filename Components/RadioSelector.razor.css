@@ -1,0 +1,24 @@
+﻿#radio-container {
+    display: list-item;
+    width: 100%;
+    flex-direction: row;
+    min-height: 0;
+}
+
+#radio-list {
+    min-width: 12rem;
+    text-align: center;
+}
+
+@media (max-width:950px) {
+    #radio-container {
+        flex-direction: column;
+    }
+
+    #radio-list {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: space-evenly;
+    }
+}

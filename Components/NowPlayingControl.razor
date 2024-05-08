@@ -1,0 +1,83 @@
+@using System.Net.WebSockets;
+@using piperpicker.Components
+@using PiperPicker.Proxies
+@using static PiperPicker.Proxies.MopidyProxy;
+
+@implements IDisposable;
+
+@inject MopidyProxy MopidyProxy
+@inject ILogger<NowPlayingControl> Logger
+
+<div class="stackable">
+    <div>
+        <span id="trackname">@_mopidyNowPlayingState.TrackName</span>
+        <br />
+        <span id="trackdescription">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
+    </div>
+
+    <div class="icons-container">
+        <div class="icon seek-back" @onclick="SeekBackButtonClickHandler"></div>
+        <div class="icon seek-forward" @onclick="SeekForwardButtonClickHandler"></div>
+        <div class="icon playpause @_playPauseIconState" @onclick="PauseButtonClickHandler"></div>
+    </div>
+</div>
+
+@code {
+    private MopidyNowPlayingState _mopidyNowPlayingState = new MopidyNowPlayingState(false, "-", "-", "file:///");
+    private string _playPauseIconState = "pause";
+
+    protected override async Task OnInitializedAsync()
+    {
+        HandleNewState(await MopidyProxy.GetNowPlaying());
+
+        await base.OnInitializedAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            MopidyProxy.OnMopidyNotification += MopidyNotificationHandler;
+        }
+
+        base.OnAfterRender(firstRender);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            MopidyProxy.OnMopidyNotification -= MopidyNotificationHandler;
+        }
+        catch { }
+    }
+
+    private void MopidyNotificationHandler(object sender, MopidyNotificationEventArgs notification)
+    {
+        InvokeAsync(() =>
+        {
+            HandleNewState(notification.GetInfo());
+            StateHasChanged();
+        });
+    }
+
+    private void HandleNewState(MopidyNowPlayingState mopidyNowPlayingState)
+    {
+        _mopidyNowPlayingState = mopidyNowPlayingState;
+        _playPauseIconState = _mopidyNowPlayingState.IsPlaying ? "pause" : "play";
+    }
+
+    private async void PauseButtonClickHandler()
+    {
+        await MopidyProxy.TogglePause();
+    }
+
+    private async void SeekBackButtonClickHandler()
+    {
+        await MopidyProxy.SeekRelative(-20000);
+    }
+    private async void SeekForwardButtonClickHandler()
+    {
+        await MopidyProxy.SeekRelative(10000);
+    }
+}
