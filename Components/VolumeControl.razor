@@ -17,9 +17,9 @@
 
     int Volume => _snapClient?.Config.Volume.Percent ?? 0;
 
-    protected override void OnAfterRender(bool firstRender)
+    protected override void OnInitialized()
     {
-        if (firstRender)
+        if (_snapClient == null)
         {
             _volumeControlClientId = Configuration["SnapcastServer:VolumeControlClientId"];
             if (string.IsNullOrEmpty(_volumeControlClientId))
@@ -33,7 +33,7 @@
             SnapcastClientProxy.RequestStatus(_volumeControlClientId);
         }
 
-        base.OnAfterRender(firstRender);
+        base.OnInitialized();
     }
 
     public void Dispose()

@@ -27,6 +27,7 @@ namespace PiperPicker.Proxies
         public ILogger<SnapcastClientProxy> Logger;
 
         private string _clientId;
+        private static int _lastKnownClientVolume = 0;
         private SnapcastClient _clientState;
 
         public void MonitorClient(string clientId)
@@ -145,11 +146,10 @@ namespace PiperPicker.Proxies
                                     if (message.Id == _clientId)
                                     {
                                         var newClientVolume = new Volume(message.Volume.Muted, message.Volume.Percent);
-                                        if (_clientState.Config.Volume != newClientVolume)
-                                        {
-                                            _clientState = _clientState with { Config = _clientState.Config with { Volume = newClientVolume } };
-                                            OnSnapNotification?.Invoke(null!, new SnapcastClientNotificationEventArgs(_clientState));
-                                        }
+                                        _lastKnownClientVolume = message.Volume.Percent;
+
+                                        _clientState = _clientState with { Config = _clientState.Config with { Volume = newClientVolume } };
+                                        OnSnapNotification?.Invoke(null!, new SnapcastClientNotificationEventArgs(_clientState));
                                     }
                                     Logger.LogInformation("ClientId {ClientId} changed", message.Id);
                                 }
@@ -240,6 +240,8 @@ namespace PiperPicker.Proxies
                     {
                         object request = BuildSnapRequest("Client.SetVolume", new { id = clientMac, volume = new { percent = newVolume } });
                         SendSnapRequest(request);
+
+                        _lastKnownClientVolume = newVolume;
                     }
                 }
             }
@@ -294,11 +296,17 @@ namespace PiperPicker.Proxies
             }
         }
 
+        private static Dictionary<string, Volume> _clientLastKnownVolumes = new();
+
         public record Volume(bool Muted, int Percent);
         public record Config(string Name, Volume Volume);
         public record SnapcastClient(string Id, Config Config, bool Connected)
         {
-            public static SnapcastClient BuildDefault(string Id) => new SnapcastClient(Id, new Config(Id, new Volume(false, 0)), false);
+
+            public static SnapcastClient BuildDefault(string Id)
+            {
+                return new SnapcastClient(Id, new Config(Id, new Volume(false, _lastKnownClientVolume)), false);
+            }
         }
 
         public class SnapcastClientNotificationEventArgs : EventArgs
