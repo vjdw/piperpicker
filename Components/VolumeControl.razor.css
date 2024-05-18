@@ -24,7 +24,7 @@ input[type="range"] {
 }
 
 input[type="range"] {
-    color: var(--pp-blue);
+    color: var(--pp-accent);
     --thumb-height: 1.125em;
     --track-height: 0.125em;
     --track-color: rgba(0, 0, 0, 0.2);
@@ -49,7 +49,7 @@ input[type="range"] {
         }
 
     input[type="range"] {
-        color: var(--pp-blue);
+        color: var(--pp-accent);
         --track-color: rgba(0, 0, 0, 0.2);
     }
 
@@ -62,7 +62,7 @@ input[type="range"] {
 input[type="range"] {
     position: relative;
     background: #fff0;
-    color: var(--pp-blue);
+    color: var(--pp-accent);
     overflow: hidden;
 }
 

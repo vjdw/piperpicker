@@ -80,8 +80,8 @@
 }
 
     .list-item-button.is-playing {
-        background-color: var(--pp-blue);
-        color: var(--pp-base3);
+        background-color: var(--pp-accent);
+        color: var(--pp-base4); 
     }
 
         .list-item-button.is-playing:hover {

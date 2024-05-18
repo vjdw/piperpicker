@@ -1,18 +1,20 @@
 :root {
-    --pp-background: #fdf6e3;
-    --pp-background-darker: #ede6d3;
-    --pp-background-darkest: #ddd6c3;
+    --pp-background: #EFE6E0;
+    --pp-background-darker: #E4D9D1;
+    --pp-background-darkest: #D8C8BE;
     /* content */
-    --pp-base01: #586e75;
-    --pp-base0: #839496;
-    --pp-base1: #93a1a1;
+    --pp-base01: #353A37;
+    --pp-base0: #E4D9D1;
+    --pp-base1: #D8C8BE;
     /* background*/
-    --pp-base2: #eee8d5;
-    --pp-base3: #fdf6e3;
+    --pp-base2: #E4D9D1;
+    --pp-base3: #D8C8BE;
+    --pp-base4: #F9F3E9;
     /* accents */
     --pp-blue: #268bd2;
+    --pp-green: #3E5746;
     --pp-accent-original: #268bd2;
-    --pp-accent: var(--pp-blue);
+    --pp-accent: var(--pp-green);
     --brightness-hover: 110%;
 }
 
