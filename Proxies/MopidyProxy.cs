@@ -56,10 +56,10 @@ namespace PiperPicker.Proxies
                 if (cancellationToken.IsCancellationRequested)
                     break;
 
-                _mopidyNowPlayingState = await GetNowPlaying();
-
                 try
                 {
+                    _mopidyNowPlayingState = await GetNowPlaying();
+
                     var cws = new ClientWebSocket();
                     cws.Options.CollectHttpResponseDetails = true;
                     await cws.ConnectAsync(new Uri("ws://hunchcorn:6680/mopidy/ws"), CancellationToken.None);
@@ -69,7 +69,7 @@ namespace PiperPicker.Proxies
                         if (cancellationToken.IsCancellationRequested)
                             break;
 
-                        var messageJson = "{}";
+                        var messageJson = "";
                         try
                         {
                             var array = new byte[16000];
@@ -113,14 +113,22 @@ namespace PiperPicker.Proxies
                         }
                         catch (Exception ex)
                         {
-                            Logger.LogError(ex, $"Error processing websocket message from mopidy: '{messageJson}'");
+                            if (string.IsNullOrEmpty(messageJson))
+                            {
+                                throw;
+                            }
+                            else
+                            {
+                                Logger.LogError(ex, $"Error processing websocket message from mopidy: '{messageJson}'");
+                            }
+                            await Task.Delay(10000, cancellationToken);
                         }
                     }
                 }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "Error in websocket communication with mopidy");
-                    await Task.Delay(5000);
+                    await Task.Delay(10000);
                 }
             }
         }
