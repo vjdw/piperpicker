@@ -17,7 +17,11 @@ namespace PiperPicker.Models
             Stations = configuration
                 .GetSection("Mopidy:RadioStreams")
                 .GetChildren()
-                .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
+                .Select(_ => new MopidyItem
+                {
+                    Name = _.Key,
+                    Uri = _.Value ?? throw new Exception($"Radio stream '{_.Key}' has no URI configured")
+                })
                 .OrderBy(_ => _.Name)
                 .ToArray();
         }

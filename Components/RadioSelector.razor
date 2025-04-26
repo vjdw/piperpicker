@@ -22,7 +22,7 @@
 </div>
 
 @code {
-    IList<MopidyItem> _radioStations = null!;
+    IList<MopidyItem>? _radioStations = null;
 
     protected override void OnInitialized()
     {
@@ -31,7 +31,11 @@
             _radioStations = Configuration
                     .GetSection("Mopidy:RadioStreams")
                     .GetChildren()
-                    .Select(_ => new MopidyItem { Name = _.Key, Uri = _.Value })
+                    .Select(_ => new MopidyItem
+                    {
+                        Name = _.Key,
+                        Uri = _.Value ?? throw new Exception($"Radio stream '{_.Key}' has no URI configured")
+                    })
                     .OrderBy(_ => _.Name)
                     .ToList();
         }

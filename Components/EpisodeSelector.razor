@@ -58,7 +58,7 @@
     private async Task LoadEpisodeList()
     {
         var episodes = await MopidyProxy.GetEpisodes();
-        var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"];
+        var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"] ?? "";
 
         var randomRadMacListEntry = new List<MopidyItem> { new MopidyItem() { Name = RandomRadmacIdentifier, Uri = "https://0.0.0.0/random" } };
         var orderedEpisodes = episodes?

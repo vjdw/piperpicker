@@ -23,7 +23,7 @@
 </div>
 
 @code {
-    private MopidyNowPlayingState _mopidyNowPlayingState = new MopidyNowPlayingState(false, "-", "-", "file:///");
+    private MopidyNowPlayingState _mopidyNowPlayingState = MopidyNowPlayingState.Default;
     private string _playPauseIconState = "pause";
 
     protected override async Task OnInitializedAsync()
