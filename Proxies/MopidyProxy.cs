@@ -14,6 +14,7 @@ namespace PiperPicker.Proxies
         };
 
         private string _mopidyEndpoint;
+        private string _mopidyWebSocketEndpoint;
         private HttpClient _client;
         private Random _random = new Random();
 
@@ -34,6 +35,7 @@ namespace PiperPicker.Proxies
             Logger = logger;
             Logger.LogInformation($"{nameof(MopidyProxy)} starting");
             _mopidyEndpoint = Configuration["Mopidy:Endpoint"] ?? throw new ApplicationException("Mopidy:Endpoint not configured");
+            _mopidyWebSocketEndpoint = Configuration["Mopidy:WebSocketEndpoint"] ?? throw new ApplicationException("Mopidy:WebSocketEndpoint not configured");
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
             _fileSystemWatcher = null!;
 
@@ -43,7 +45,6 @@ namespace PiperPicker.Proxies
                 _monitorWebSocketTask = Task.Run(() => MonitorWebSocket(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
 
                 MonitorEpisodeListPath();
-
             }
             catch (Exception ex)
             {
@@ -64,7 +65,7 @@ namespace PiperPicker.Proxies
 
                     var cws = new ClientWebSocket();
                     cws.Options.CollectHttpResponseDetails = true;
-                    await cws.ConnectAsync(new Uri("ws://hunchcorn:6680/mopidy/ws"), CancellationToken.None);
+                    await cws.ConnectAsync(new Uri(_mopidyWebSocketEndpoint), CancellationToken.None);
 
                     while (true)
                     {
@@ -220,15 +221,15 @@ namespace PiperPicker.Proxies
             if (directoryToMonitor != null && Directory.Exists(directoryToMonitor))
             {
                 _fileSystemWatcher = new FileSystemWatcher(directoryToMonitor!);
-                _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName | NotifyFilters.LastWrite;
-                _fileSystemWatcher.Filter = "";
+                _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName;
+                _fileSystemWatcher.Filter = "*.m4a";
                 _fileSystemWatcher.IncludeSubdirectories = true;
                 _fileSystemWatcher.EnableRaisingEvents = true;
                 _fileSystemWatcher.InternalBufferSize = 1048576;
 
-                _fileSystemWatcher.Created += (object sender, FileSystemEventArgs e) => { RaiseEpisodeListEvent(); };
-                _fileSystemWatcher.Renamed += (object sender, RenamedEventArgs e) => { RaiseEpisodeListEvent(); };
-                _fileSystemWatcher.Deleted += (object sender, FileSystemEventArgs e) => { RaiseEpisodeListEvent(); };
+                _fileSystemWatcher.Created += OnFileChanged;
+                _fileSystemWatcher.Renamed += OnFileChanged;
+                _fileSystemWatcher.Deleted += OnFileChanged;
 
                 Logger.LogInformation($"Monitoring directory '{directoryToMonitor}'");
             }
@@ -346,10 +347,44 @@ namespace PiperPicker.Proxies
         {
             OnMopidyNotification?.Invoke(null!, new MopidyNotificationEventArgs(mopidyNowPlayingState));
         }
-
-        private void RaiseEpisodeListEvent()
+        
+        private Timer? _debounceTimer;
+        private readonly Lock _debounceLock = new();
+        private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(5000);
+        private void RaiseEpisodeListEvent_WithDebounce()
         {
-            OnMopidyEpisodeListNotification?.Invoke(null!, new MopidyEpisodeListNotificationEventArgs());
+            lock (_debounceLock)
+            {
+                _debounceTimer?.Dispose();
+
+                _debounceTimer = new Timer(_ =>
+                {
+                    try
+                    {
+                        Logger.LogInformation("Debounced timer fired, raising episode list event");
+                        OnMopidyEpisodeListNotification?.Invoke(null!, new MopidyEpisodeListNotificationEventArgs());
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.LogError(ex, "Error during debounced RaiseEpisodeListEvent");
+                    }
+                }, null, DebounceDelay, Timeout.InfiniteTimeSpan);
+            }
+        }
+        
+        /// <summary>
+        /// Filters out changes to *.partial.m4a files
+        /// </summary>
+        private void OnFileChanged(object sender, FileSystemEventArgs e)
+        {
+            if (e.FullPath.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase))
+            {
+                Logger.LogDebug($"Ignoring partial file '{e.FullPath}'");
+                return;
+            }
+
+            Logger.LogInformation($"Detected file change in '{e.FullPath}'");
+            RaiseEpisodeListEvent_WithDebounce();
         }
 
         public class StateDto
