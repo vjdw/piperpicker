@@ -1,6 +1,6 @@
 ﻿.stackable {
     padding: 1rem;
-    max-height: 3rem;
+    max-height: 4rem;
     display: flex;
     flex-direction: row;
     justify-content: space-between;
@@ -18,12 +18,21 @@
     color: #888;
 }
 
+.track-position {
+    align-self: center;
+    text-align: end;
+    margin-right: 0.6rem;
+    margin-top: -1rem;
+    font-variant-numeric: tabular-nums;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', 'DejaVu Sans Mono', 'Liberation Mono', 'Courier New', monospace;
+}
+
 .icon {
     width: 3em;
     height: 3em;
     transition: all .15s ease-in-out;
     background-repeat: no-repeat !important;
-    margin-left: 2rem;
+    margin-left: 1.3rem;
 }
 
     .icon.playpause.play {

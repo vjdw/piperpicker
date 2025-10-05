@@ -2,7 +2,7 @@
 }
 
 .leading-date {
-    font-family: monospace;
+    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', 'DejaVu Sans Mono', 'Liberation Mono', 'Courier New', monospace;
     vertical-align: middle;
 }
 

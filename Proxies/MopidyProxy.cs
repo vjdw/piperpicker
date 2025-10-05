@@ -25,6 +25,7 @@ namespace PiperPicker.Proxies
         public ILogger<MopidyProxy> Logger;
         private bool _disposedValue;
         private Task _monitorWebSocketTask;
+        private Task _monitorTrackTimePositionTask;
         private readonly CancellationTokenSource _cancellationTokenSource;
         private MopidyNowPlayingState _mopidyNowPlayingState;
 
@@ -43,7 +44,8 @@ namespace PiperPicker.Proxies
             {
                 _cancellationTokenSource = new CancellationTokenSource();
                 _monitorWebSocketTask = Task.Run(() => MonitorWebSocket(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-
+                _monitorTrackTimePositionTask = Task.Run(() => MonitorTrackTimePosition(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
+                
                 MonitorEpisodeListPath();
             }
             catch (Exception ex)
@@ -52,6 +54,30 @@ namespace PiperPicker.Proxies
             }
         }
 
+        private async Task MonitorTrackTimePosition(CancellationToken cancellationToken)
+        {
+            while (true)
+            {
+                try
+                {
+                    await Task.Delay(1000, cancellationToken);
+                    if (cancellationToken.IsCancellationRequested)
+                        break;
+
+                    if (_mopidyNowPlayingState.IsPlaying)
+                    {
+                        var trackTimePosition = await GetTimePositionMs();
+                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackPositionMs = trackTimePosition };
+                        RaiseEvent(_mopidyNowPlayingState);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, $"Error processing time position message from mopidy.");
+                }
+            }
+        }
+        
         private async void MonitorWebSocket(CancellationToken cancellationToken)
         {
             while (true)
@@ -101,7 +127,7 @@ namespace PiperPicker.Proxies
                                         var playbackStartedMessage = JsonSerializer.Deserialize<MopidyTrackPlaybackStartedMessage>(messageJson, _serialiserOptions);
                                         var nowPlayingDisplayName = GetNowPlayingDisplayName(playbackStartedMessage?.TlTrack.Track);
 
-                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? "", TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///" };
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? "", TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1};
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
                                     else if (message.Event == "stream_title_changed")
@@ -136,7 +162,7 @@ namespace PiperPicker.Proxies
             }
         }
 
-        private record MopidyTrack(string Uri, string Name, string Comment);
+        private record MopidyTrack(string Uri, string Name, string Comment, int Length);
         private record MopidyTlTrack(MopidyTrack Track);
         private record MopidyTrackPlaybackStartedMessage(string Event) : MopidyBaseMessage(Event)
         {
@@ -151,12 +177,28 @@ namespace PiperPicker.Proxies
         private record MopidyStreamTitleChangedMessage(string Event, string Title) : MopidyBaseMessage(Event);
         private record MopidyBaseMessage(string Event);
 
-        public async Task<StateDto> GetState()
+        private async Task<StateDto> GetState()
         {
             var responseContent = await MopidyPost("core.playback.get_state");
             return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
         }
 
+        private async Task<int> GetTimePositionMs()
+        {
+            try
+            {
+                var timePositionResponseContent = await MopidyPost("core.playback.get_time_position");
+                //var trackResponseContent = await MopidyPost("core.playback.get_track");
+                var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(timePositionResponseContent, _serialiserOptions);
+                return timePositionResponse?.Result ?? -1;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error in GetTimePositionMs");
+                return -1;
+            }
+        }
+        
         public async Task<MopidyNowPlayingState> GetNowPlaying(bool refreshCache = false)
         {
             if (refreshCache || _mopidyNowPlayingState == null)
@@ -173,6 +215,7 @@ namespace PiperPicker.Proxies
             {
                 var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
                 var stateResponseTask = MopidyPost("core.playback.get_state");
+                var trackPositionTask = GetTimePositionMs();
 
                 var currentTrackResponse = await currentTrackResponseTask;
                 var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
@@ -181,8 +224,9 @@ namespace PiperPicker.Proxies
                 var stateResponse = JsonSerializer.Deserialize<StateDto>(state, _serialiserOptions);
                 var isPlaying = (stateResponse?.Result ?? "") == "playing";
                 var nowPlayingName = GetNowPlayingDisplayName(nowPlaying);
-
-                return new MopidyNowPlayingState(isPlaying, nowPlayingName, nowPlaying?.Result?.Comment ?? "", nowPlaying?.Result?.Uri ?? "file:///");
+                var trackPosition = await trackPositionTask;
+                
+                return new MopidyNowPlayingState(isPlaying, nowPlayingName, nowPlaying?.Result?.Comment ?? "", nowPlaying?.Result?.Uri ?? "file:///", trackPosition, nowPlaying?.Result?.Length ?? -1);
             }
             catch(Exception ex)
             {
@@ -413,6 +457,8 @@ namespace PiperPicker.Proxies
             public required string Comment { get; set; }
 
             public required string Date { get; set; }
+            
+            public required int Length { get; set; }
         }
 
         public class MopidyItems
@@ -449,9 +495,9 @@ namespace PiperPicker.Proxies
         public delegate void MopidyNotificationEventHandler(object source, MopidyNotificationEventArgs e);
         public delegate void MopidyEpisodeListNotificationEventHandler(object source, MopidyEpisodeListNotificationEventArgs e);
 
-        public record MopidyNowPlayingState(bool IsPlaying, string TrackName, string TrackDescription, string TrackUri)
+        public record MopidyNowPlayingState(bool IsPlaying, string TrackName, string TrackDescription, string TrackUri, int TrackPositionMs, int TrackLengthMs)
         {
-            public static MopidyNowPlayingState Default => new (false, "", "", "file:///");
+            public static MopidyNowPlayingState Default => new (false, "", "", "file:///", -1, -1);
         }
 
         public class MopidyNotificationEventArgs : EventArgs

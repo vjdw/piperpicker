@@ -11,14 +11,21 @@
 <div class="stackable">
     <div>
         <span id="trackname">@_mopidyNowPlayingState.TrackName</span>
-        <br />
+        <br/>
         <span id="trackdescription">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
     </div>
 
-    <div class="icons-container">
-        <div class="icon seek-back" @onclick="SeekBackButtonClickHandler"></div>
-        <div class="icon seek-forward" @onclick="SeekForwardButtonClickHandler"></div>
-        <div class="icon playpause @_playPauseIconState" @onclick="PauseButtonClickHandler"></div>
+    <div>
+        <div class="icons-container">
+            <div class="icon seek-back" @onclick="SeekBackButtonClickHandler"></div>
+            <div class="icon seek-forward" @onclick="SeekForwardButtonClickHandler"></div>
+            <div class="icon playpause @_playPauseIconState" @onclick="PauseButtonClickHandler"></div>
+        </div>
+        <div>
+            <div id="trackposition" class="track-position">
+                <p>@BuildTrackPosition()</p>
+            </div>        
+        </div>
     </div>
 </div>
 
@@ -80,4 +87,25 @@
     {
         await MopidyProxy.SeekRelative(10000);
     }
+
+    private string BuildTrackPosition()
+    {
+        if (_mopidyNowPlayingState.TrackPositionMs > 0)
+        {
+            return _mopidyNowPlayingState.TrackLengthMs > 0
+                ? $"{TimeHumaniser(_mopidyNowPlayingState.TrackPositionMs)} ⸱ {TimeHumaniser(_mopidyNowPlayingState.TrackLengthMs)}"
+                : $"{TimeHumaniser(_mopidyNowPlayingState.TrackPositionMs)}";
+        }
+        return "--:--";
+    }
+    
+    private string TimeHumaniser(int timestampMs)
+    {
+        var ts = TimeSpan.FromMilliseconds(timestampMs);
+        
+        return ts.Hours > 0
+            ? $"{(int)ts.TotalHours}:{ts.Minutes:D2}:{ts.Seconds:D2}"
+            : $"{ts.Minutes}:{ts.Seconds:D2}";
+    }
+
 }
