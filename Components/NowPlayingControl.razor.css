@@ -24,7 +24,7 @@
     margin-right: 0.6rem;
     margin-top: -1rem;
     font-variant-numeric: tabular-nums;
-    font-family: Consolas, Monaco, 'Andale Mono', 'Ubuntu Mono', 'DejaVu Sans Mono', 'Liberation Mono', 'Courier New', monospace;
+    font-family: monospace;
 }
 
 .icon {
