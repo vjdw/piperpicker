@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNet.WebApi.Client" Version="6.0.0" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <Content Update="wwwroot\images\light-off.svg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
