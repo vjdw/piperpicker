@@ -1,5 +1,5 @@
 ﻿.stackable {
-    padding: 1rem;
+    padding: 0.5rem;
     max-height: 4rem;
     display: flex;
     flex-direction: row;
@@ -22,9 +22,28 @@
     align-self: center;
     text-align: end;
     margin-right: 0.6rem;
-    margin-top: -1rem;
     font-variant-numeric: tabular-nums;
     font-family: monospace;
+}
+
+span#trackpositiontime {
+    color: #fff;
+    margin-inline: 0.175em;
+    mix-blend-mode: difference;
+    font-size: 1.2em;
+    line-height: 100%;
+}
+
+.track-progress-bar {
+    height: 1.2em;
+}
+
+.track-progress-bar-progress {
+    background-color: var(--pp-accent);
+}
+
+.track-progress-bar-background {
+    background-color: var(--pp-base1);
 }
 
 .icon {
@@ -32,25 +51,28 @@
     height: 3em;
     transition: all .15s ease-in-out;
     background-repeat: no-repeat !important;
-    margin-left: 1.3rem;
 }
 
+    .icon.seek-back {
+        background: url("/images/seek-back.svg");
+        background-size: cover;
+        margin-inline: -8px;
+    }
+    
+    .icon.seek-forward {
+        background: url("/images/seek-forward.svg");
+        background-size: cover;
+        margin-left: 1.3rem;
+    }
+    
     .icon.playpause.play {
         background: url("/images/play.svg");
         background-size: cover;
+        margin-left: 1.3rem;
     }
 
     .icon.playpause.pause {
         background: url("/images/pause.svg");
         background-size: cover;
-    }
-
-    .icon.seek-back {
-        background: url("/images/seek-back.svg");
-        background-size: cover;
-    }
-
-    .icon.seek-forward {
-        background: url("/images/seek-forward.svg");
-        background-size: cover;
+        margin-left: 1.3rem;
     }

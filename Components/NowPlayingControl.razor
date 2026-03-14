@@ -1,4 +1,5 @@
 @using System.Net.WebSockets;
+@using Microsoft.Extensions.Logging
 @using piperpicker.Components
 @using PiperPicker.Proxies
 @using static PiperPicker.Proxies.MopidyProxy;
@@ -23,8 +24,13 @@
         </div>
         <div>
             <div id="trackposition" class="track-position">
-                <p>@BuildTrackPosition()</p>
-            </div>        
+                
+                <div id="trackprogressbarbackground" class="track-progress-bar track-progress-bar-background" style="width:100%">
+                    <div id="trackprogressbarprogress" class="track-progress-bar track-progress-bar-progress" style="width:@BuildTrackProgressPercent();">
+                        <span id="trackpositiontime">@BuildTrackPosition()</span>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -56,7 +62,9 @@
         {
             MopidyProxy.OnMopidyNotification -= MopidyNotificationHandler;
         }
-        catch { }
+        catch
+        {
+        }
     }
 
     private void MopidyNotificationHandler(object sender, MopidyNotificationEventArgs notification)
@@ -83,26 +91,30 @@
     {
         await MopidyProxy.SeekRelative(-20000);
     }
+
     private async void SeekForwardButtonClickHandler()
     {
         await MopidyProxy.SeekRelative(10000);
     }
 
+    private string BuildTrackProgressPercent()
+    {
+        return _mopidyNowPlayingState is { TrackLengthMs: > 0, TrackPositionMs: > 0 }
+            ? $"{100 * _mopidyNowPlayingState.TrackPositionMs / _mopidyNowPlayingState.TrackLengthMs}%"
+            : "0%";
+    }
+
     private string BuildTrackPosition()
     {
-        if (_mopidyNowPlayingState.TrackPositionMs > 0)
-        {
-            return _mopidyNowPlayingState.TrackLengthMs > 0
-                ? $"{TimeHumaniser(_mopidyNowPlayingState.TrackPositionMs)} ⸱ {TimeHumaniser(_mopidyNowPlayingState.TrackLengthMs)}"
-                : $"{TimeHumaniser(_mopidyNowPlayingState.TrackPositionMs)}";
-        }
-        return "--:--";
+        return _mopidyNowPlayingState.TrackPositionMs > 0
+            ? $"{TimeHumaniser(_mopidyNowPlayingState.TrackPositionMs)}"
+            : "--:--";
     }
-    
+
     private string TimeHumaniser(int timestampMs)
     {
         var ts = TimeSpan.FromMilliseconds(timestampMs);
-        
+
         return ts.Hours > 0
             ? $"{(int)ts.TotalHours}:{ts.Minutes:D2}:{ts.Seconds:D2}"
             : $"{ts.Minutes}:{ts.Seconds:D2}";
