@@ -30,8 +30,9 @@ span#trackpositiontime {
     color: #fff;
     margin-inline: 0.175em;
     mix-blend-mode: difference;
-    font-size: 1.2em;
-    line-height: 100%;
+    font-size: 1.6em;
+    line-height: 80%;
+    font-weight: 100;
 }
 
 .track-progress-bar {
