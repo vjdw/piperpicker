@@ -279,6 +279,8 @@ namespace PiperPicker.Proxies
                 _fileSystemWatcher.EnableRaisingEvents = true;
                 _fileSystemWatcher.InternalBufferSize = 1048576;
 
+                _fileSystemWatcher.Error += OnWatcherError;
+                
                 _fileSystemWatcher.Created += OnFileChanged;
                 _fileSystemWatcher.Renamed += OnFileChanged;
                 _fileSystemWatcher.Deleted += OnFileChanged;
@@ -291,6 +293,26 @@ namespace PiperPicker.Proxies
             }
         }
 
+        private void OnWatcherError(object sender, ErrorEventArgs e)
+        {
+            try
+            {
+                Logger.LogError(e.GetException(), "FileSystemWatcher error occurred.");
+                _fileSystemWatcher?.Dispose();
+            }
+            finally
+            {
+                _ = RestartWatcherAsync();
+            }
+        }
+
+        private async Task RestartWatcherAsync()
+        {
+            Logger.LogError("FileSystemWatcher restarting in 5 seconds.");
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            MonitorEpisodeListPath();
+        }
+        
         public async Task<IList<MopidyItem>> GetEpisodes()
         {
             var pathInMopidyFormat = $"file:///{Configuration["Mopidy:EpisodeList:Path"]}";
@@ -413,7 +435,7 @@ namespace PiperPicker.Proxies
                 {
                     try
                     {
-                        Logger.LogInformation("Debounced timer fired, raising episode list event");
+                        Logger.LogInformation("Debounce timer fired, raising episode list event");
                         OnMopidyEpisodeListNotification?.Invoke(null!, new MopidyEpisodeListNotificationEventArgs());
                     }
                     catch (Exception ex)
