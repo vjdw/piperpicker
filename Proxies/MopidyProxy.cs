@@ -509,7 +509,7 @@ namespace PiperPicker.Proxies
             {
                 if (disposing)
                 {
-                    _cancellationTokenSource.Cancel();
+                    _cancellationTokenSource?.Cancel();
                     _fileSystemWatcher.Dispose();
                 }
 
