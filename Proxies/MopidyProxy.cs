@@ -34,7 +34,7 @@ namespace PiperPicker.Proxies
         private bool _disposedValue;
         private Task _monitorWebSocketTask;
         private Task _monitorTrackTimePositionTask;
-        private readonly CancellationTokenSource _cancellationTokenSource;
+        private static CancellationTokenSource? _cancellationTokenSource;
         private MopidyNowPlayingState _mopidyNowPlayingState;
 
         public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<MopidyProxy> logger)
@@ -50,6 +50,8 @@ namespace PiperPicker.Proxies
 
             try
             {
+                if (_cancellationTokenSource is not null)
+                    _cancellationTokenSource.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
                 _monitorWebSocketTask = Task.Run(() => MonitorWebSocket(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 _monitorTrackTimePositionTask = Task.Run(() => MonitorTrackTimePosition(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
