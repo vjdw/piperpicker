@@ -34,6 +34,7 @@ namespace PiperPicker.Proxies
         private bool _disposedValue;
         private Task _monitorWebSocketTask;
         private Task _monitorTrackTimePositionTask;
+        private Task _monitorEpisodeListPathTask;
         private static CancellationTokenSource? _cancellationTokenSource;
         private MopidyNowPlayingState _mopidyNowPlayingState;
 
@@ -53,10 +54,10 @@ namespace PiperPicker.Proxies
                 if (_cancellationTokenSource is not null)
                     _cancellationTokenSource.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
+
                 _monitorWebSocketTask = Task.Run(() => MonitorWebSocket(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 _monitorTrackTimePositionTask = Task.Run(() => MonitorTrackTimePosition(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
-                
-                MonitorEpisodeListPath(_cancellationTokenSource.Token);
+                _monitorEpisodeListPathTask = Task.Run(() => MonitorEpisodeListPath(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -275,7 +276,7 @@ namespace PiperPicker.Proxies
 
         private readonly FileSystemWatcher _fileSystemWatcher;
         
-        private void MonitorEpisodeListPath(CancellationToken cancellationToken)
+        private async Task MonitorEpisodeListPath(CancellationToken cancellationToken)
         {
             var directoryToMonitor = Configuration["Mopidy:EpisodeList:Path"];
 
@@ -312,7 +313,7 @@ namespace PiperPicker.Proxies
                     {
                         // The errorTcs task completed, meaning the watcher's Error event did fire.
                         Logger.LogWarning($"FileSystemWatcher error: {errorTcs.Task.Result.Message}");
-                        cancellationToken.WaitHandle.WaitOne(5000);
+                        await Task.Delay(5000, cancellationToken);
                     }
                 }
                 catch (OperationCanceledException)
