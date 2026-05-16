@@ -56,7 +56,7 @@ namespace PiperPicker.Proxies
                 _monitorWebSocketTask = Task.Run(() => MonitorWebSocket(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 _monitorTrackTimePositionTask = Task.Run(() => MonitorTrackTimePosition(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 
-                MonitorEpisodeListPath();
+                MonitorEpisodeListPath(_cancellationTokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -66,13 +66,11 @@ namespace PiperPicker.Proxies
 
         private async Task MonitorTrackTimePosition(CancellationToken cancellationToken)
         {
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
                     await Task.Delay(1000, cancellationToken);
-                    if (cancellationToken.IsCancellationRequested)
-                        break;
 
                     if (_mopidyNowPlayingState.IsPlaying)
                     {
@@ -81,20 +79,22 @@ namespace PiperPicker.Proxies
                         RaiseEvent(_mopidyNowPlayingState);
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    Logger.LogInformation($"Stopping {nameof(MonitorTrackTimePosition)}.");
+                    break;
+                }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, $"Error processing time position message from mopidy.");
+                    Logger.LogError(ex, "Error processing time position message from mopidy.");
                 }
             }
         }
         
         private async void MonitorWebSocket(CancellationToken cancellationToken)
         {
-            while (true)
+            while (!cancellationToken.IsCancellationRequested)
             {
-                if (cancellationToken.IsCancellationRequested)
-                    break;
-
                 try
                 {
                     _mopidyNowPlayingState = await GetNowPlaying();
@@ -103,11 +103,8 @@ namespace PiperPicker.Proxies
                     cws.Options.CollectHttpResponseDetails = true;
                     await cws.ConnectAsync(new Uri(_mopidyWebSocketEndpoint), CancellationToken.None);
 
-                    while (true)
+                    while (!cancellationToken.IsCancellationRequested)
                     {
-                        if (cancellationToken.IsCancellationRequested)
-                            break;
-
                         var messageJson = "";
                         try
                         {
@@ -150,6 +147,10 @@ namespace PiperPicker.Proxies
                                 }
                             }
                         }
+                        catch (OperationCanceledException)
+                        {
+                            throw;
+                        }
                         catch (Exception ex)
                         {
                             if (string.IsNullOrEmpty(messageJson))
@@ -164,10 +165,15 @@ namespace PiperPicker.Proxies
                         }
                     }
                 }
+                catch (OperationCanceledException)
+                {
+                    Logger.LogInformation($"Stopping {nameof(MonitorWebSocket)}.");
+                    break;
+                }
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, "Error in websocket communication with mopidy");
-                    await Task.Delay(10000);
+                    await Task.Delay(10000, cancellationToken);
                 }
             }
         }
@@ -267,52 +273,53 @@ namespace PiperPicker.Proxies
             return nowPlayingName;
         }
 
-        private FileSystemWatcher _fileSystemWatcher;
-        private void MonitorEpisodeListPath()
+        private readonly FileSystemWatcher _fileSystemWatcher;
+        
+        private void MonitorEpisodeListPath(CancellationToken cancellationToken)
         {
             var directoryToMonitor = Configuration["Mopidy:EpisodeList:Path"];
 
-            if (directoryToMonitor != null && Directory.Exists(directoryToMonitor))
+            while (!cancellationToken.IsCancellationRequested)
             {
-                _fileSystemWatcher = new FileSystemWatcher(directoryToMonitor!);
-                _fileSystemWatcher.NotifyFilter = NotifyFilters.FileName;
-                _fileSystemWatcher.Filter = "*.m4a";
-                _fileSystemWatcher.IncludeSubdirectories = true;
-                _fileSystemWatcher.EnableRaisingEvents = true;
-                _fileSystemWatcher.InternalBufferSize = 1048576;
+                if (directoryToMonitor == null || !Directory.Exists(directoryToMonitor))
+                {
+                    Logger.LogError($"Cannot monitor directory '{directoryToMonitor}' because it does not exist.");
+                    break;
+                }
 
-                _fileSystemWatcher.Error += OnWatcherError;
-                
-                _fileSystemWatcher.Created += OnFileChanged;
-                _fileSystemWatcher.Renamed += OnFileChanged;
-                _fileSystemWatcher.Deleted += OnFileChanged;
+                using var watcher = new FileSystemWatcher(directoryToMonitor);
+                watcher.NotifyFilter = NotifyFilters.FileName;
+                watcher.Filter = "*.m4a";
+                watcher.IncludeSubdirectories = true;
+                watcher.EnableRaisingEvents = true;
+                watcher.InternalBufferSize = 1048576;
 
-                Logger.LogInformation($"Monitoring directory '{directoryToMonitor}'");
-            }
-            else
-            {
-                Logger.LogError($"Cannot monitor directory '{directoryToMonitor}' because it does not exist.");
-            }
-        }
+                var errorTcs = new TaskCompletionSource<Exception>();
+                watcher.Error += (s, e) => errorTcs.TrySetResult(e.GetException());
+                watcher.Created += OnFileChanged;
+                watcher.Renamed += OnFileChanged;
+                watcher.Deleted += OnFileChanged;
 
-        private void OnWatcherError(object sender, ErrorEventArgs e)
-        {
-            try
-            {
-                Logger.LogError(e.GetException(), "FileSystemWatcher error occurred.");
-                _fileSystemWatcher?.Dispose();
-            }
-            finally
-            {
-                _ = RestartWatcherAsync();
-            }
-        }
+                Logger.LogInformation($"Started directory monitor on '{directoryToMonitor}'");
 
-        private async Task RestartWatcherAsync()
-        {
-            Logger.LogError("FileSystemWatcher restarting in 5 seconds.");
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            MonitorEpisodeListPath();
+                try
+                {
+                    // This is to help make the file system watcher more robust.
+                    // Wait for an hour, an error, or a cancellation, whichever comes first.
+                    // For either of the first two, loop round and recreate the FileSystemWatcher.
+                    errorTcs.Task.Wait(TimeSpan.FromHours(1), cancellationToken);
+                    if (errorTcs.Task.IsCompleted)
+                    {
+                        // The errorTcs task completed, meaning the watcher's Error event did fire.
+                        Logger.LogWarning($"FileSystemWatcher error: {errorTcs.Task.Result.Message}");
+                        cancellationToken.WaitHandle.WaitOne(5000);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+            }
         }
         
         public async Task<IList<MopidyItem>> GetEpisodes()
