@@ -11,6 +11,15 @@
     flex-direction: row;
 }
 
+#trackdetails {
+    width: 100%;
+    container-type: inline-size;
+}
+
+.trackdetail {
+    font-size: clamp(0.65rem, 3cqw, 1rem);
+}
+
 #trackname {
 }
 

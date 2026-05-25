@@ -10,10 +10,9 @@
 @inject ILogger<NowPlayingControl> Logger
 
 <div class="stackable">
-    <div>
-        <span id="trackname">@_mopidyNowPlayingState.TrackName</span>
-        <br/>
-        <span id="trackdescription">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
+    <div id="trackdetails">
+        <span id="trackname" class="trackdetail">@_mopidyNowPlayingState.TrackName</span>
+        <span id="trackdescription" class="trackdetail">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
     </div>
 
     <div>
