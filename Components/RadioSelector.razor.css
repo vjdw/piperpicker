@@ -8,6 +8,9 @@
 #radio-list {
     min-width: 12rem;
     text-align: center;
+    border-inline-end: solid;
+    border-image: linear-gradient(to bottom, var(--pp-background) 0%, var(--pp-shadow-lighter) 30%, var(--pp-shadow-lighter) 70%, var(--pp-background) 100%) 1;
+    border-width: 2px;
 }
 
 @media (max-width:950px) {
@@ -20,5 +23,9 @@
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: space-evenly;
+        border-inline-end: none;
+        border-block-end: solid;
+        border-image: linear-gradient(to right, var(--pp-background) 0%, var(--pp-shadow-lighter) 30%, var(--pp-shadow-lighter) 70%, var(--pp-background) 100%) 1;
+        padding-bottom: 0.3rem;
     }
 }

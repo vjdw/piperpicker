@@ -2,6 +2,9 @@
     --pp-background: #EFE6E0;
     --pp-background-darker: #E4D9D1;
     --pp-background-darkest: #D8C8BE;
+    --pp-shadow-dark: #5e5048;
+    --pp-shadow-light: #918279;
+    --pp-shadow-lighter: #a8988f;
     /* content */
     --pp-base01: #353A37;
     --pp-base0: #E4D9D1;
