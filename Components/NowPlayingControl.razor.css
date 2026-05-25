@@ -36,7 +36,7 @@ span#trackpositiontime {
 }
 
 .track-progress-bar {
-    height: 1.2em;
+    padding-top: 2px;
 }
 
 .track-progress-bar-progress {
@@ -44,7 +44,7 @@ span#trackpositiontime {
 }
 
 .track-progress-bar-background {
-    background-color: var(--pp-base1);
+    background: linear-gradient(0deg, rgba(0,0,0,0.12) 0%, var(--pp-background-darker) 35%, var(--pp-background-darker) 65%, rgba(0,0,0,0.12) 100%);
 }
 
 .icon {

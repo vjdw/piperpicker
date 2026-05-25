@@ -19,9 +19,9 @@
 }
 
 #volume-section {
-    background-color: var(--pp-background-darker);
     grid-column: 1 / span 2;
     grid-row: 2;
+    max-height: 1.8rem;
 }
 
 #radio-section {
@@ -35,6 +35,7 @@
     grid-column: 2;
     grid-row: 3;
     overflow: auto;
+    background: linear-gradient(0deg,var(--pp-background-darkest) 70%, var(--pp-background) 100%);
 }
 
 @media (max-width:950px) {

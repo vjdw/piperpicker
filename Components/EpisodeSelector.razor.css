@@ -7,7 +7,7 @@
 
 #episode-list {
     overflow: initial;
-    background-color: var(--pp-background-darkest);
+    background: none;
     width: 100%;
     text-align: center;
 }
