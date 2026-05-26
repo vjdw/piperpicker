@@ -1,6 +1,4 @@
-@using System.Net.WebSockets;
 @using Microsoft.Extensions.Logging
-@using piperpicker.Components
 @using PiperPicker.Proxies
 @using static PiperPicker.Proxies.MopidyProxy;
 
@@ -13,7 +11,7 @@
     <div id="trackdetails">
         <span id="trackname" class="trackdetail">@_mopidyNowPlayingState.TrackName</span>
         <br class="name-description-splitter newline"/>
-        <span class="name-description-splitter inline">&#8211;</span>
+        <span class="name-description-splitter inline">@(string.IsNullOrWhiteSpace(_mopidyNowPlayingState.TrackDescription) ? "" : "–")</span>
         <span id="trackdescription" class="trackdetail">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
     </div>
 
