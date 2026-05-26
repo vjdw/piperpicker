@@ -25,7 +25,7 @@
 }
 
 #trackdescription {
-    color: #888;
+    color: var(--pp-shadow-light);
     font-style: italic;
 }
 
@@ -34,7 +34,7 @@
 }
 .name-description-splitter.inline{
     display: none;
-    color: #888;
+    color: var(--pp-shadow-light);
 }
 
 .track-position {
@@ -53,7 +53,7 @@ span#trackpositiontime {
     mix-blend-mode: difference;
     font-size: 1rem;
     line-height: 80%;
-    font-weight: 100;
+    font-weight: 600;
 }
 
 .track-progress-bar {
