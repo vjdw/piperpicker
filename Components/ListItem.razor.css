@@ -82,6 +82,11 @@
     line-height: 24px;
     text-shadow: rgba(0, 0, 0, 8%) 1px 1px 1px;
     -webkit-font-smoothing: antialiased;
+
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-wrap: nowrap;
+    max-width: 100%;
 }
 
     .list-item-button.is-playing {
@@ -98,7 +103,7 @@
         width: 33%;
     }
 
-    #radio-list input {
+    #radio-list button {
         padding: 0.4rem 1.2rem 0.4rem 1.2rem;
     }
 }
@@ -108,7 +113,7 @@
         width: 33%;
     }
 
-    #radio-list input {
+    #radio-list button {
         padding: 0.2rem 0.6rem 0.2rem 0.6rem;
     }
 }

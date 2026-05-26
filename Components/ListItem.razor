@@ -11,7 +11,9 @@
 
 <div class="list-item">
     <span class=@DisplayNameLeadingDateClass()>@DisplayNameLeadingDate()</span>
-    <input type="button" class="list-item-button button-4 @(_isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()">
+    <button type="button" class="list-item-button button-4 @(_isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler">
+        @DisplayNameWithoutLeadingDate()
+    </button>
 </div>
 
 @code {
