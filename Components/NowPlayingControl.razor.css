@@ -18,13 +18,22 @@
 }
 
 .trackdetail {
-    font-size: clamp(0.65rem, 3cqw, 1.75rem);
+    font-size: 1.4rem;
 }
 
 #trackname {
 }
 
 #trackdescription {
+    color: #888;
+    font-style: italic;
+}
+
+.name-description-splitter.newline{
+    display: block;
+}
+.name-description-splitter.inline{
+    display: none;
     color: #888;
 }
 
@@ -33,20 +42,22 @@
     text-align: end;
     margin-right: 0.6rem;
     font-variant-numeric: tabular-nums;
-    font-family: monospace;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 0.8rem;
 }
 
 span#trackpositiontime {
     color: #fff;
     margin-inline: 0.175em;
     mix-blend-mode: difference;
-    font-size: 1.6em;
+    font-size: 1rem;
     line-height: 80%;
     font-weight: 100;
 }
 
 .track-progress-bar {
-    padding-top: 2px;
+    padding-top: 1px;
 }
 
 .track-progress-bar-progress {
@@ -87,3 +98,17 @@ span#trackpositiontime {
         background-size: cover;
         margin-left: 1.3rem;
     }
+
+@media (max-width:950px) {
+    
+    .trackdetail {
+        font-size: clamp(0.8rem, 5cqw, 1.2rem);
+    }
+
+    .name-description-splitter.newline{
+        display: none;
+    }
+    .name-description-splitter.inline{
+        display: inline;
+    }
+}

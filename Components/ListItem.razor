@@ -11,7 +11,7 @@
 
 <div class="list-item">
     <span class=@DisplayNameLeadingDateClass()>@DisplayNameLeadingDate()</span>
-    <input type="button" class="list-item-button button-4 @(_isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()"></input>
+    <input type="button" class="list-item-button button-4 @(_isPlaying ? "is-playing" : "")" @key="MopidyItem.Uri" @onclick="ItemClickHandler" value="@DisplayNameWithoutLeadingDate()">
 </div>
 
 @code {
@@ -77,7 +77,7 @@
 
     private bool IsThisItemPlaying(MopidyNowPlayingState mopidyNowPlayingState) => mopidyNowPlayingState.TrackUri == MopidyItem.Uri;
 
-    private string DisplayName => MopidyItem.Name.Split('.').First().Replace("RadMac_", "").Replace("_", " ").Replace("*", "⭐");
+    private string DisplayName => MopidyItem.Name.Split('.').First().Replace("RadMac_", "").Replace("_", " ").Replace("*", "\u2605\uFE0E");
 
     private string DisplayNameWithoutLeadingDate()
     {

@@ -2,7 +2,9 @@
 }
 
 .leading-date {
-    font-family: monospace;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    font-size: 0.8rem;
     vertical-align: middle;
 }
 
@@ -20,6 +22,8 @@
     color: var(--pp-base01);
     cursor: pointer;
     display: inline-block;
+    font-family: 'DM Sans', sans-serif;
+    font-size: clamp(0.75rem, 2cqw, 1rem);
     font-weight: 500;
     line-height: 1.6rem;
     list-style: none;

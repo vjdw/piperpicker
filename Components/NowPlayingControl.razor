@@ -12,7 +12,8 @@
 <div class="stackable">
     <div id="trackdetails">
         <span id="trackname" class="trackdetail">@_mopidyNowPlayingState.TrackName</span>
-        <br/>
+        <br class="name-description-splitter newline"/>
+        <span class="name-description-splitter inline">&#8211;</span>
         <span id="trackdescription" class="trackdetail">@(_mopidyNowPlayingState.TrackDescription ?? "")</span>
     </div>
 

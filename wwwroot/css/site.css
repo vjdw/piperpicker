@@ -21,16 +21,97 @@
     --brightness-hover: 110%;
 }
 
+@font-face {
+    font-family: 'DM Mono';
+    src: url('/fonts/dm-mono-v16-latin-300.woff2') format('woff2');
+    font-weight: 300;
+}
+@font-face {
+    font-family: 'DM Mono';
+    src: url('/fonts/dm-mono-v16-latin-300italic.woff2') format('woff2');
+    font-weight: 300;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'DM Mono';
+    src: url('/fonts/dm-mono-v16-latin-regular.woff2') format('woff2');
+    font-weight: 400;
+}
+@font-face {
+    font-family: 'DM Mono';
+    src: url('/fonts/dm-mono-v16-latin-italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'DM Mono';
+    src: url('/fonts/dm-mono-v16-latin-500.woff2') format('woff2');
+    font-weight: 500;
+}
+
+@font-face {
+    font-family: 'DM Mono';
+    src: url('/fonts/dm-mono-v16-latin-500italic.woff2') format('woff2');
+    font-weight: 500;
+    font-style: italic;
+}
+
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-300.woff2') format('woff2');
+    font-weight: 300;
+}
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-300italic.woff2') format('woff2');
+    font-weight: 300;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-italic.woff2') format('woff2');
+    font-weight: 400;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-regular.woff2') format('woff2');
+    font-weight: 400;
+}
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-500.woff2') format('woff2');
+    font-weight: 500;
+}
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-500italic.woff2') format('woff2');
+    font-weight: 500;
+    font-style: italic;
+}
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-600.woff2') format('woff2');
+    font-weight: 600;
+}
+@font-face {
+    font-family: 'DM Sans';
+    src: url('/fonts/dm-sans-v17-latin-600italic.woff2') format('woff2');
+    font-weight: 600;
+    font-style: italic;
+}
+
 html,
 body {
-    font-family: -apple-system,Roboto,Helvetica Neue Light,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
+    font-family: 'DM Sans',-apple-system,Roboto,Helvetica Neue Light,Helvetica Neue,Helvetica,Arial,Lucida Grande,sans-serif;
     height: 100%;
     width: 100%;
     overflow: auto;
 }
 
 body {
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: 'DM Sans', Arial, Helvetica, sans-serif;
+    font-weight: 500;
     background: var(--pp-background);
     color: var(--pp-base01);
     margin: 0;
