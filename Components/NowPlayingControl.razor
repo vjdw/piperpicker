@@ -109,7 +109,7 @@
     {
         return _mopidyNowPlayingState.TrackPositionMs > 0
             ? $"{TimeHumaniser(_mopidyNowPlayingState.TrackPositionMs)}"
-            : "--:--";
+            : "";
     }
 
     private string TimeHumaniser(int timestampMs)
