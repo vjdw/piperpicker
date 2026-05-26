@@ -102,7 +102,7 @@ span#trackpositiontime {
 @media (max-width:950px) {
     
     .trackdetail {
-        font-size: clamp(0.8rem, 5cqw, 1.2rem);
+        font-size: clamp(0.8rem, 4cqw, 1.2rem);
     }
 
     .name-description-splitter.newline{

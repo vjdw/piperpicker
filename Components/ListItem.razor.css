@@ -6,7 +6,7 @@
     font-weight: 300;
     font-size: 0.8rem;
     vertical-align: middle;
-    color: var(--pp-shadow-light);
+    color: var(--pp-shadow-dark);
 }
 
 .leading-date.hidden {
@@ -24,7 +24,7 @@
     cursor: pointer;
     display: inline-block;
     font-family: 'DM Sans', sans-serif;
-    font-size: clamp(0.75rem, 2cqw, 1rem);
+    font-size: clamp(0.75rem, 3cqw, 1.1rem);
     font-weight: 400;
     line-height: 1.6rem;
     list-style: none;
