@@ -5,8 +5,7 @@
     font-family: 'DM Mono', monospace;
     font-weight: 300;
     font-size: 0.8rem;
-    vertical-align: middle;
-    padding-top: 0.2rem;
+    vertical-align: text-bottom;
     color: var(--pp-shadow-dark);
 }
 
