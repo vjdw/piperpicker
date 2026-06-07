@@ -1,16 +1,7 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
 namespace PiperPicker.Proxies
 {
@@ -326,6 +317,7 @@ namespace PiperPicker.Proxies
         public async Task<IList<MopidyItem>> GetEpisodes()
         {
             var pathInMopidyFormat = $"file:///{Configuration["Mopidy:EpisodeList:Path"]}";
+            await MopidyPost("core.library.refresh", pathInMopidyFormat);
             var responseContent = await MopidyPost("core.library.browse", pathInMopidyFormat);
             var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent, _serialiserOptions);
 
