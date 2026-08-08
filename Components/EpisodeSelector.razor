@@ -30,7 +30,8 @@
     {
         if (_episodes == null)
         {
-            await LoadEpisodeList();
+            var episodes = await MopidyProxy.GetEpisodes();
+            await LoadEpisodeList(episodes);
         }
 
         await base.OnInitializedAsync();
@@ -55,9 +56,8 @@
         catch { }
     }
 
-    private async Task LoadEpisodeList()
+    private async Task LoadEpisodeList(IList<MopidyItem> episodes)
     {
-        var episodes = await MopidyProxy.GetEpisodes();
         var episodeNameFilter = Configuration["Mopidy:EpisodeList:StartWithFilter"] ?? "";
 
         var randomRadMacListEntry = new List<MopidyItem> { new MopidyItem() { Name = RandomRadmacIdentifier, Uri = "https://0.0.0.0/random" } };
@@ -72,7 +72,7 @@
     {
         InvokeAsync(async () =>
         {
-            await LoadEpisodeList();
+            await LoadEpisodeList(notification.Episodes);
             StateHasChanged();
         });
     }

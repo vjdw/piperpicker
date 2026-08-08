@@ -38,7 +38,6 @@ namespace PiperPicker.Proxies
             _mopidyEndpoint = Configuration["Mopidy:Endpoint"] ?? throw new ApplicationException("Mopidy:Endpoint not configured");
             _mopidyWebSocketEndpoint = Configuration["Mopidy:WebSocketEndpoint"] ?? throw new ApplicationException("Mopidy:WebSocketEndpoint not configured");
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
-            _fileSystemWatcher = null!;
 
             try
             {
@@ -82,8 +81,8 @@ namespace PiperPicker.Proxies
                 }
             }
         }
-        
-        private async void MonitorWebSocket(CancellationToken cancellationToken)
+
+        private async Task MonitorWebSocket(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
             {
@@ -110,6 +109,7 @@ namespace PiperPicker.Proxies
                                 {
                                     messageJson = messageJson.Substring(0, messageJson.IndexOf('\0'));
                                 }
+
                                 var message = JsonSerializer.Deserialize<MopidyBaseMessage>(messageJson, _serialiserOptions);
 
                                 if (message != null)
@@ -126,7 +126,7 @@ namespace PiperPicker.Proxies
                                         var playbackStartedMessage = JsonSerializer.Deserialize<MopidyTrackPlaybackStartedMessage>(messageJson, _serialiserOptions);
                                         var nowPlayingDisplayName = GetNowPlayingDisplayName(playbackStartedMessage?.TlTrack.Track);
 
-                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? "", TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1};
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? "", TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1 };
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
                                     else if (message.Event == "stream_title_changed")
@@ -153,6 +153,7 @@ namespace PiperPicker.Proxies
                             {
                                 Logger.LogError(ex, $"Error processing websocket message from mopidy: '{messageJson}'");
                             }
+
                             await Task.Delay(10000, cancellationToken);
                         }
                     }
@@ -171,18 +172,21 @@ namespace PiperPicker.Proxies
         }
 
         private record MopidyTrack(string Uri, string Name, string Comment, int Length);
+
         private record MopidyTlTrack(MopidyTrack Track);
+
         private record MopidyTrackPlaybackStartedMessage(string Event) : MopidyBaseMessage(Event)
         {
-            [JsonPropertyName("tl_track")]
-            public MopidyTlTrack TlTrack { get; init; } = default!;
+            [JsonPropertyName("tl_track")] public MopidyTlTrack TlTrack { get; init; } = default!;
         }
+
         private record MopidyPlaybackStateChangedMessage(string Event) : MopidyBaseMessage(Event)
         {
-            [JsonPropertyName("new_state")]
-            public string NewState { get; init; } = default!;
+            [JsonPropertyName("new_state")] public string NewState { get; init; } = default!;
         }
+
         private record MopidyStreamTitleChangedMessage(string Event, string Title) : MopidyBaseMessage(Event);
+
         private record MopidyBaseMessage(string Event);
 
         private async Task<StateDto> GetState()
@@ -196,7 +200,6 @@ namespace PiperPicker.Proxies
             try
             {
                 var timePositionResponseContent = await MopidyPost("core.playback.get_time_position");
-                //var trackResponseContent = await MopidyPost("core.playback.get_track");
                 var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(timePositionResponseContent, _serialiserOptions);
                 return timePositionResponse?.Result ?? -1;
             }
@@ -206,7 +209,7 @@ namespace PiperPicker.Proxies
                 return -1;
             }
         }
-        
+
         public async Task<MopidyNowPlayingState> GetNowPlaying(bool refreshCache = false)
         {
             if (refreshCache || _mopidyNowPlayingState == null)
@@ -233,10 +236,10 @@ namespace PiperPicker.Proxies
                 var isPlaying = (stateResponse?.Result ?? "") == "playing";
                 var nowPlayingName = GetNowPlayingDisplayName(nowPlaying);
                 var trackPosition = await trackPositionTask;
-                
+
                 return new MopidyNowPlayingState(isPlaying, nowPlayingName, nowPlaying?.Result?.Comment ?? "", nowPlaying?.Result?.Uri ?? "file:///", trackPosition, nowPlaying?.Result?.Length ?? -1);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Logger.LogError(ex, "Error in GetNowPlaying");
                 return MopidyNowPlayingState.Default;
@@ -251,6 +254,7 @@ namespace PiperPicker.Proxies
                 nowPlayingName = nowPlayingResponse?.Result?.Uri ?? "";
                 nowPlayingName = nowPlayingName?.Split('/').Last().Split('.').First().Split('%').First().Replace('_', ' ').Replace('-', ' ') ?? "";
             }
+
             return nowPlayingName;
         }
 
@@ -262,58 +266,85 @@ namespace PiperPicker.Proxies
                 nowPlayingName = mopidyTrack?.Uri ?? "";
                 nowPlayingName = nowPlayingName?.Split('/').Last().Split('.').First().Split('%').First().Replace('_', ' ').Replace('-', ' ') ?? "";
             }
+
             return nowPlayingName;
         }
 
-        private readonly FileSystemWatcher _fileSystemWatcher;
-        
+        private bool _mopidyEpisodeCountOutOfSync = true;
+        private DateTime _mopidyLastSyncUtc = DateTime.UtcNow;
         private async Task MonitorEpisodeListPath(CancellationToken cancellationToken)
         {
             var directoryToMonitor = Configuration["Mopidy:EpisodeList:Path"];
+            if (directoryToMonitor == null || !Directory.Exists(directoryToMonitor))
+            {
+                Logger.LogError($"Cannot monitor directory '{directoryToMonitor}' because it does not exist.");
+                return;
+            }
 
+            Logger.LogInformation($"Started directory monitor on '{directoryToMonitor}'.");
+            HashSet<string> knownFilesInDirectory = new(StringComparer.Ordinal);
+            
+            const int longLoopDelay = 60000;
+            const int shortLoopDelay = 8000;
+            const int maxDelayBeforeMopidySyncSeconds = 600;
             while (!cancellationToken.IsCancellationRequested)
             {
-                if (directoryToMonitor == null || !Directory.Exists(directoryToMonitor))
-                {
-                    Logger.LogError($"Cannot monitor directory '{directoryToMonitor}' because it does not exist.");
-                    break;
-                }
-
-                using var watcher = new FileSystemWatcher(directoryToMonitor);
-                watcher.NotifyFilter = NotifyFilters.FileName;
-                watcher.Filter = "*.m4a";
-                watcher.IncludeSubdirectories = true;
-                watcher.EnableRaisingEvents = true;
-                watcher.InternalBufferSize = 1048576;
-
-                var errorTcs = new TaskCompletionSource<Exception>();
-                watcher.Error += (s, e) => errorTcs.TrySetResult(e.GetException());
-                watcher.Created += OnFileChanged;
-                watcher.Renamed += OnFileChanged;
-                watcher.Deleted += OnFileChanged;
-
-                Logger.LogInformation($"Started directory monitor on '{directoryToMonitor}'");
-
                 try
                 {
-                    // This is to help make the file system watcher more robust.
-                    // Wait for an hour, an error, or a cancellation, whichever comes first.
-                    // For either of the first two, loop round and recreate the FileSystemWatcher.
-                    errorTcs.Task.Wait(TimeSpan.FromHours(1), cancellationToken);
-                    if (errorTcs.Task.IsCompleted)
+                    var currentM4AFilesInDirectory = M4AFilesInDirectory(directoryToMonitor).ToList();
+                    var newM4AFilesFound = NewFilesInDirectory(currentM4AFilesInDirectory).Any();
+
+                    // GetEpisodes is an expensive call, avoid calling it on every loop.
+                    var shouldGetEpisodesFromMopidy = _mopidyEpisodeCountOutOfSync
+                                                      || DateTime.UtcNow.Subtract(_mopidyLastSyncUtc).TotalSeconds > maxDelayBeforeMopidySyncSeconds
+                                                      || newM4AFilesFound;
+
+                    if (shouldGetEpisodesFromMopidy)
                     {
-                        // The errorTcs task completed, meaning the watcher's Error event did fire.
-                        Logger.LogWarning($"FileSystemWatcher error: {errorTcs.Task.Result.Message}");
-                        await Task.Delay(5000, cancellationToken);
+                        var mopidyEpisodes = await GetEpisodes();
+                        _mopidyLastSyncUtc = DateTime.UtcNow;
+
+                        _mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentM4AFilesInDirectory.Count;
+                        Logger.LogInformation("Raising episode list event.");
+                        RaiseEpisodeListEvent_WithDebounce(mopidyEpisodes);
                     }
+
+                    await Task.Delay(_mopidyEpisodeCountOutOfSync ? shortLoopDelay : longLoopDelay, cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
                     break;
                 }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, $"Error {nameof(MonitorEpisodeListPath)} in polling loop.");
+                    await Task.Delay(longLoopDelay, cancellationToken);
+                }
+            }
+
+
+            List<string> NewFilesInDirectory(IList<string> actualCurrentFilesInDirectory)
+            {
+                var filesInDirectorySet = new HashSet<string>(actualCurrentFilesInDirectory, StringComparer.Ordinal);
+                var newFiles = filesInDirectorySet.Except(knownFilesInDirectory).ToList();
+
+                knownFilesInDirectory = filesInDirectorySet;
+
+                return newFiles;
             }
         }
-        
+
+        private IEnumerable<string> M4AFilesInDirectory(string directory)
+        {
+            var current = Directory
+                .EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+                .Where(f =>
+                    Path.GetExtension(f).Equals(".m4a", StringComparison.OrdinalIgnoreCase)
+                    && !f.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase)
+                );
+            return current;
+        }
+
         public async Task<IList<MopidyItem>> GetEpisodes()
         {
             var pathInMopidyFormat = $"file:///{Configuration["Mopidy:EpisodeList:Path"]}";
@@ -326,7 +357,7 @@ namespace PiperPicker.Proxies
                 Logger.LogError($"Deserialising response from Mopidy core.library.browse gave null result.");
                 return new List<MopidyItem>();
             }
-            
+
             return mopidyItems.Result;
         }
 
@@ -400,7 +431,7 @@ namespace PiperPicker.Proxies
         private async Task<string> MopidyPost(string method, string targetUri)
         {
             var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"uri\":\"{targetUri}\"}}"} }}";
-            return await MopidyPostActual(requestContent);            
+            return await MopidyPostActual(requestContent);
         }
 
         private async Task<string> MopidyPost(string method, int seekPositionMs)
@@ -423,11 +454,12 @@ namespace PiperPicker.Proxies
         {
             OnMopidyNotification?.Invoke(null!, new MopidyNotificationEventArgs(mopidyNowPlayingState));
         }
-        
+
         private Timer? _debounceTimer;
         private readonly Lock _debounceLock = new();
         private static readonly TimeSpan DebounceDelay = TimeSpan.FromMilliseconds(5000);
-        private void RaiseEpisodeListEvent_WithDebounce()
+
+        private void RaiseEpisodeListEvent_WithDebounce(IList<MopidyItem> episodes)
         {
             lock (_debounceLock)
             {
@@ -438,7 +470,7 @@ namespace PiperPicker.Proxies
                     try
                     {
                         Logger.LogInformation("Debounce timer fired, raising episode list event");
-                        OnMopidyEpisodeListNotification?.Invoke(null!, new MopidyEpisodeListNotificationEventArgs());
+                        OnMopidyEpisodeListNotification?.Invoke(null!, new MopidyEpisodeListNotificationEventArgs(episodes));
                     }
                     catch (Exception ex)
                     {
@@ -446,21 +478,6 @@ namespace PiperPicker.Proxies
                     }
                 }, null, DebounceDelay, Timeout.InfiniteTimeSpan);
             }
-        }
-        
-        /// <summary>
-        /// Filters out changes to *.partial.m4a files
-        /// </summary>
-        private void OnFileChanged(object sender, FileSystemEventArgs e)
-        {
-            if (e.FullPath.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase))
-            {
-                Logger.LogDebug($"Ignoring partial file '{e.FullPath}'");
-                return;
-            }
-
-            Logger.LogInformation($"Detected file change in '{e.FullPath}'");
-            RaiseEpisodeListEvent_WithDebounce();
         }
 
         public class StateDto
@@ -489,7 +506,7 @@ namespace PiperPicker.Proxies
             public required string Comment { get; set; }
 
             public required string Date { get; set; }
-            
+
             public required int Length { get; set; }
         }
 
@@ -497,6 +514,7 @@ namespace PiperPicker.Proxies
         {
             public required IList<MopidyItem> Result { get; set; }
         }
+
         public class MopidyItem
         {
             public required string Name { get; set; }
@@ -510,7 +528,6 @@ namespace PiperPicker.Proxies
                 if (disposing)
                 {
                     _cancellationTokenSource?.Cancel();
-                    _fileSystemWatcher.Dispose();
                 }
 
                 _disposedValue = true;
@@ -525,20 +542,23 @@ namespace PiperPicker.Proxies
         }
 
         public delegate void MopidyNotificationEventHandler(object source, MopidyNotificationEventArgs e);
+
         public delegate void MopidyEpisodeListNotificationEventHandler(object source, MopidyEpisodeListNotificationEventArgs e);
 
         public record MopidyNowPlayingState(bool IsPlaying, string TrackName, string TrackDescription, string TrackUri, int TrackPositionMs, int TrackLengthMs)
         {
-            public static MopidyNowPlayingState Default => new (false, "", "", "file:///", -1, -1);
+            public static MopidyNowPlayingState Default => new(false, "", "", "file:///", -1, -1);
         }
 
         public class MopidyNotificationEventArgs : EventArgs
         {
             private readonly MopidyNowPlayingState _mopidyNowPlayingState;
+
             public MopidyNotificationEventArgs(MopidyNowPlayingState mopidyNowPlayingState)
             {
                 _mopidyNowPlayingState = mopidyNowPlayingState;
             }
+
             public MopidyNowPlayingState GetInfo()
             {
                 return _mopidyNowPlayingState;
@@ -547,8 +567,11 @@ namespace PiperPicker.Proxies
 
         public class MopidyEpisodeListNotificationEventArgs : EventArgs
         {
-            public MopidyEpisodeListNotificationEventArgs()
+            public IList<MopidyItem> Episodes { get; set; }
+
+            public MopidyEpisodeListNotificationEventArgs(IList<MopidyItem> episodeList)
             {
+                Episodes = episodeList;
             }
         }
     }
