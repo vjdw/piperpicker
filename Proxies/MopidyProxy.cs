@@ -297,11 +297,11 @@ namespace PiperPicker.Proxies
             {
                 try
                 {
-                    var currentM4AFilesInDirectory = M4AFilesInDirectory(directoryToMonitor).ToList();
-                    var newM4AFilesFound = NewFilesSincePreviousLoop(currentM4AFilesInDirectory).Any();
+                    var currentFilesInDirectory = FilesInDirectory(directoryToMonitor).ToList();
+                    var newFilesFound = NewFilesSincePreviousLoop(currentFilesInDirectory).Any();
 
                     // GetEpisodes is an expensive call, avoid calling it on every loop.
-                    var shouldGetEpisodesFromMopidy = newM4AFilesFound
+                    var shouldGetEpisodesFromMopidy = newFilesFound
                                                       || mopidyEpisodeCountOutOfSync
                                                       || DateTime.UtcNow.Subtract(mopidyLastSyncUtc).TotalSeconds > maxDelayBeforeMopidySyncSeconds;
 
@@ -310,9 +310,9 @@ namespace PiperPicker.Proxies
                         var mopidyEpisodes = await GetEpisodes();
                         mopidyLastSyncUtc = DateTime.UtcNow;
 
-                        mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentM4AFilesInDirectory.Count;
+                        mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentFilesInDirectory.Count;
                         if (mopidyEpisodeCountOutOfSync)
-                            Logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}. Mopidy {mopidyEpisodes.Count} episodes. Directory {currentM4AFilesInDirectory.Count} files.");
+                            Logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}. Mopidy {mopidyEpisodes.Count} episodes. Directory {currentFilesInDirectory.Count} files.");
                         
                         Logger.LogInformation("Raising episode list event.");
                         RaiseEpisodeListEvent_WithDebounce(mopidyEpisodes);
@@ -342,14 +342,16 @@ namespace PiperPicker.Proxies
                 return newFiles;
             }
             
-            IEnumerable<string> M4AFilesInDirectory(string directory)
+            IEnumerable<string> FilesInDirectory(string directory)
             {
                 var current = Directory
-                    .EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-                    .Where(f =>
-                        Path.GetExtension(f).Equals(".m4a", StringComparison.OrdinalIgnoreCase)
-                        && !f.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase)
-                    );
+                    .EnumerateFiles(directory, "*", SearchOption.AllDirectories);
+                
+                    // Mopidy GetEpisodes appears to return all files so I don't need this filter. 
+                    // .Where(f =>
+                    //     Path.GetExtension(f).Equals(".m4a", StringComparison.OrdinalIgnoreCase)
+                    //     && !f.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase)
+                    //);
                 return current;
             }
         }
