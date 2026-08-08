@@ -312,7 +312,7 @@ namespace PiperPicker.Proxies
 
                         mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentM4AFilesInDirectory.Count;
                         if (mopidyEpisodeCountOutOfSync)
-                            Logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}.");
+                            Logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}. Mopidy {mopidyEpisodes.Count} episodes. Directory {currentM4AFilesInDirectory.Count} files.");
                         
                         Logger.LogInformation("Raising episode list event.");
                         RaiseEpisodeListEvent_WithDebounce(mopidyEpisodes);
