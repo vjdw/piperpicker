@@ -270,8 +270,6 @@ namespace PiperPicker.Proxies
             return nowPlayingName;
         }
 
-        private bool _mopidyEpisodeCountOutOfSync = true;
-        private DateTime _mopidyLastSyncUtc = DateTime.UtcNow;
         private async Task MonitorEpisodeListPath(CancellationToken cancellationToken)
         {
             var directoryToMonitor = Configuration["Mopidy:EpisodeList:Path"];
@@ -282,8 +280,16 @@ namespace PiperPicker.Proxies
             }
 
             Logger.LogInformation($"Started directory monitor on '{directoryToMonitor}'.");
+
+            // Does the episode list from Mopidy match what was found looking
+            // at the directory directly? If not Mopidy should catch up soon so 
+            // poll more quickly.
+            bool mopidyEpisodeCountOutOfSync = true;
+            // Looking at the directory directly, what was found in the previous
+            // loop, allows detection of new files.
             HashSet<string> knownFilesInDirectory = new(StringComparer.Ordinal);
-            
+            DateTime mopidyLastSyncUtc = DateTime.UtcNow;
+
             const int longLoopDelay = 60000;
             const int shortLoopDelay = 8000;
             const int maxDelayBeforeMopidySyncSeconds = 600;
@@ -292,24 +298,27 @@ namespace PiperPicker.Proxies
                 try
                 {
                     var currentM4AFilesInDirectory = M4AFilesInDirectory(directoryToMonitor).ToList();
-                    var newM4AFilesFound = NewFilesInDirectory(currentM4AFilesInDirectory).Any();
+                    var newM4AFilesFound = NewFilesSincePreviousLoop(currentM4AFilesInDirectory).Any();
 
                     // GetEpisodes is an expensive call, avoid calling it on every loop.
-                    var shouldGetEpisodesFromMopidy = _mopidyEpisodeCountOutOfSync
-                                                      || DateTime.UtcNow.Subtract(_mopidyLastSyncUtc).TotalSeconds > maxDelayBeforeMopidySyncSeconds
-                                                      || newM4AFilesFound;
+                    var shouldGetEpisodesFromMopidy = newM4AFilesFound
+                                                      || mopidyEpisodeCountOutOfSync
+                                                      || DateTime.UtcNow.Subtract(mopidyLastSyncUtc).TotalSeconds > maxDelayBeforeMopidySyncSeconds;
 
                     if (shouldGetEpisodesFromMopidy)
                     {
                         var mopidyEpisodes = await GetEpisodes();
-                        _mopidyLastSyncUtc = DateTime.UtcNow;
+                        mopidyLastSyncUtc = DateTime.UtcNow;
 
-                        _mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentM4AFilesInDirectory.Count;
+                        mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentM4AFilesInDirectory.Count;
+                        if (mopidyEpisodeCountOutOfSync)
+                            Logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}.");
+                        
                         Logger.LogInformation("Raising episode list event.");
                         RaiseEpisodeListEvent_WithDebounce(mopidyEpisodes);
                     }
 
-                    await Task.Delay(_mopidyEpisodeCountOutOfSync ? shortLoopDelay : longLoopDelay, cancellationToken);
+                    await Task.Delay(mopidyEpisodeCountOutOfSync ? shortLoopDelay : longLoopDelay, cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -323,26 +332,26 @@ namespace PiperPicker.Proxies
             }
 
 
-            List<string> NewFilesInDirectory(IList<string> actualCurrentFilesInDirectory)
+            List<string> NewFilesSincePreviousLoop(IList<string> actualM4AFilesInDirectory)
             {
-                var filesInDirectorySet = new HashSet<string>(actualCurrentFilesInDirectory, StringComparer.Ordinal);
+                var filesInDirectorySet = new HashSet<string>(actualM4AFilesInDirectory, StringComparer.Ordinal);
                 var newFiles = filesInDirectorySet.Except(knownFilesInDirectory).ToList();
 
                 knownFilesInDirectory = filesInDirectorySet;
 
                 return newFiles;
             }
-        }
-
-        private IEnumerable<string> M4AFilesInDirectory(string directory)
-        {
-            var current = Directory
-                .EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-                .Where(f =>
-                    Path.GetExtension(f).Equals(".m4a", StringComparison.OrdinalIgnoreCase)
-                    && !f.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase)
-                );
-            return current;
+            
+            IEnumerable<string> M4AFilesInDirectory(string directory)
+            {
+                var current = Directory
+                    .EnumerateFiles(directory, "*", SearchOption.AllDirectories)
+                    .Where(f =>
+                        Path.GetExtension(f).Equals(".m4a", StringComparison.OrdinalIgnoreCase)
+                        && !f.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase)
+                    );
+                return current;
+            }
         }
 
         public async Task<IList<MopidyItem>> GetEpisodes()
