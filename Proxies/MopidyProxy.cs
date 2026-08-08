@@ -290,18 +290,19 @@ namespace PiperPicker.Proxies
             HashSet<string> knownFilesInDirectory = new(StringComparer.Ordinal);
             DateTime mopidyLastSyncUtc = DateTime.UtcNow;
 
-            const int longLoopDelay = 60000;
-            const int shortLoopDelay = 8000;
+            const int longLoopDelayMs = 60000;
+            const int shortLoopDelayMs = 10000;
             const int maxDelayBeforeMopidySyncSeconds = 600;
             while (!cancellationToken.IsCancellationRequested)
             {
                 try
                 {
+                    // Checking local directory changes is cheap and helps avoid calling Mopidy GetEpisodes.
                     var currentFilesInDirectory = FilesInDirectory(directoryToMonitor).ToList();
-                    var newFilesFound = NewFilesSincePreviousLoop(currentFilesInDirectory).Any();
+                    var directoryContentChanged = DirectoryContentsChangedSincePreviousLoop(currentFilesInDirectory);
 
                     // GetEpisodes is an expensive call, avoid calling it on every loop.
-                    var shouldGetEpisodesFromMopidy = newFilesFound
+                    var shouldGetEpisodesFromMopidy = directoryContentChanged
                                                       || mopidyEpisodeCountOutOfSync
                                                       || DateTime.UtcNow.Subtract(mopidyLastSyncUtc).TotalSeconds > maxDelayBeforeMopidySyncSeconds;
 
@@ -318,7 +319,7 @@ namespace PiperPicker.Proxies
                         RaiseEpisodeListEvent_WithDebounce(mopidyEpisodes);
                     }
 
-                    await Task.Delay(mopidyEpisodeCountOutOfSync ? shortLoopDelay : longLoopDelay, cancellationToken);
+                    await Task.Delay(mopidyEpisodeCountOutOfSync ? shortLoopDelayMs : longLoopDelayMs, cancellationToken);
                 }
                 catch (OperationCanceledException)
                 {
@@ -327,19 +328,20 @@ namespace PiperPicker.Proxies
                 catch (Exception ex)
                 {
                     Logger.LogError(ex, $"Error {nameof(MonitorEpisodeListPath)} in polling loop.");
-                    await Task.Delay(longLoopDelay, cancellationToken);
+                    await Task.Delay(longLoopDelayMs, cancellationToken);
                 }
             }
 
 
-            List<string> NewFilesSincePreviousLoop(IList<string> actualM4AFilesInDirectory)
+            bool DirectoryContentsChangedSincePreviousLoop(IList<string> actualM4AFilesInDirectory)
             {
-                var filesInDirectorySet = new HashSet<string>(actualM4AFilesInDirectory, StringComparer.Ordinal);
-                var newFiles = filesInDirectorySet.Except(knownFilesInDirectory).ToList();
+                var filesInDirectory = new HashSet<string>(actualM4AFilesInDirectory, StringComparer.Ordinal);
+                var newFiles = filesInDirectory.Except(knownFilesInDirectory);
+                var disappearedFiles = knownFilesInDirectory.Except(filesInDirectory);
 
-                knownFilesInDirectory = filesInDirectorySet;
+                knownFilesInDirectory = filesInDirectory;
 
-                return newFiles;
+                return newFiles.Any() || disappearedFiles.Any();
             }
             
             IEnumerable<string> FilesInDirectory(string directory)
