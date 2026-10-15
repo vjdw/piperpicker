@@ -40,7 +40,7 @@ namespace PiperPicker.Proxies
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
 
             try
-            {
+            { 
                 if (_cancellationTokenSource is not null)
                     _cancellationTokenSource.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -69,7 +69,7 @@ namespace PiperPicker.Proxies
                         _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackPositionMs = trackTimePosition };
                         RaiseEvent(_mopidyNowPlayingState);
                     }
-                }
+                } 
                 catch (OperationCanceledException)
                 {
                     Logger.LogInformation($"Stopping {nameof(MonitorTrackTimePosition)}.");
@@ -532,6 +532,7 @@ namespace PiperPicker.Proxies
         {
             public required string Name { get; set; }
             public required string Uri { get; set; }
+            public string? BbcStationId { get; set; }
         }
 
         protected virtual void Dispose(bool disposing)
