@@ -68,12 +68,12 @@ namespace PiperPicker.Proxies
         {
             if (_mopidyCurrentTrack == null)
                 return false;
-            
+
             var matchingStreamConfiguration = _radioSelectorOptions.RadioStreams.FirstOrDefault(stream => stream.Uri == _mopidyCurrentTrack.Uri);
 
             return matchingStreamConfiguration == null;
         }
-        
+
         private async Task MonitorTrackTimePosition(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -143,19 +143,19 @@ namespace PiperPicker.Proxies
                                     else if (new[] { "track_playback_started", "track_playback_paused", "track_playback_resumed" }.Contains(message.Event))
                                     {
                                         var isPaused = message.Event == "track_playback_paused";
-                                        
+
                                         var playbackStartedMessage = JsonSerializer.Deserialize<MopidyTrackPlaybackStartedMessage>(messageJson, _serialiserOptions);
-                                        var nowPlayingDisplayName = GetNowPlayingDisplayName(playbackStartedMessage?.TlTrack.Track);
                                         _mopidyCurrentTrack = playbackStartedMessage?.TlTrack.Track;
+                                        var nowPlayingDisplayName = GetNowPlayingDisplayName(_mopidyCurrentTrack);
 
                                         // Common state items
-                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1 };
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
 
                                         // State items which depend on source (BBC radio stream, or not)
                                         _mopidyNowPlayingState = IsMopidyCurrentTrackBbcRadioStream(out var bbcRadioStreamMopidyItem)
-                                            ? await UpdateMopidyNowPlayingStateFromBbc(cancellationToken, bbcRadioStreamMopidyItem, includeTrackDescription: !isPaused) 
-                                            : _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? "", TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1 };
-                                        
+                                            ? await UpdateMopidyNowPlayingStateFromBbc(cancellationToken, bbcRadioStreamMopidyItem, includeTrackDescription: !isPaused)
+                                            : _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = _mopidyCurrentTrack?.Comment ?? "", TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
+
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
                                     else if (message.Event == "stream_title_changed")
@@ -289,14 +289,18 @@ namespace PiperPicker.Proxies
 
         private string GetNowPlayingDisplayName(MopidyTrack? mopidyTrack)
         {
-            var nowPlayingName = mopidyTrack?.Name ?? "";
-            if (string.IsNullOrWhiteSpace(nowPlayingName))
-            {
-                nowPlayingName = mopidyTrack?.Uri ?? "";
-                nowPlayingName = nowPlayingName?.Split('/').Last().Split('.').First().Split('%').First().Replace('_', ' ').Replace('-', ' ') ?? "";
-            }
+            if (mopidyTrack == null)
+                return "";
 
-            return nowPlayingName;
+            var matchingStreamConfiguration = _radioSelectorOptions.RadioStreams.FirstOrDefault(stream => stream.Uri == mopidyTrack.Uri);
+            if (matchingStreamConfiguration != null)
+                return matchingStreamConfiguration.Name.TrimStart('*', ' '); // Favourite stations have * prefix.
+
+            if (!string.IsNullOrWhiteSpace(mopidyTrack.Name))
+                return mopidyTrack.Name;
+
+            return mopidyTrack.Uri?.Split('/').Last().Split('.').First().Split('%').First().Replace('_', ' ').Replace('-', ' ')
+                   ?? "";
         }
 
         private async Task MonitorEpisodeListPath(CancellationToken cancellationToken)
