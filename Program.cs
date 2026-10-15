@@ -1,4 +1,5 @@
-﻿using PiperPicker.Models;
+﻿using Microsoft.Extensions.Options;
+using PiperPicker.Models;
 using PiperPicker.Proxies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,7 +17,7 @@ builder.Services.Configure<RadioSelectorOptions>(builder.Configuration.GetSectio
 // Needs to be scoped to match how snapcast's JSON RPC calls work (the RPC sender doesn't receive notifications of that change).
 // So if piperpicker is open in multiple browsers, each needs its own instance of SnapcastClientProxy to correctly get notifications of volume change.
 builder.Services.AddScoped(sp => new SnapcastClientProxy(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<SnapcastClientProxy>>()));
-builder.Services.AddSingleton(sp => new MopidyProxy(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<MopidyProxy>>()));
+builder.Services.AddSingleton(sp => new MopidyProxy(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IOptions<RadioSelectorOptions>>(), sp.GetRequiredService<ILogger<MopidyProxy>>()));
 
 var app = builder.Build();
 app.UseStaticFiles();

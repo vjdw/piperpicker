@@ -16,11 +16,6 @@
     </div>
 
     <div>
-        <div class="icons-container">
-            <div class="icon seek-back" @onclick="SeekBackButtonClickHandler"></div>
-            <div class="icon seek-forward" @onclick="SeekForwardButtonClickHandler"></div>
-            <div class="icon playpause @_playPauseIconState" @onclick="PauseButtonClickHandler"></div>
-        </div>
         <div>
             <div id="trackposition" class="track-position">
                 
@@ -30,6 +25,14 @@
                     </div>
                 </div>
             </div>
+        </div>
+        <div class="icons-container">
+            @if (MopidyProxy.IsMopidyCurrentTrackRadioStream())
+            {
+                <div class="icon seek-back" @onclick="SeekBackButtonClickHandler"></div>
+                <div class="icon seek-forward" @onclick="SeekForwardButtonClickHandler"></div>
+            }
+            <div class="icon playpause @_playPauseIconState" @onclick="PauseButtonClickHandler"></div>
         </div>
     </div>
 </div>

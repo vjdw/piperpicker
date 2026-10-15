@@ -2,10 +2,12 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Microsoft.Extensions.Options;
+using PiperPicker.Models;
 
 namespace PiperPicker.Proxies
 {
-    public class MopidyProxy : IDisposable
+    public partial class MopidyProxy : IDisposable
     {
         private JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
         {
@@ -23,16 +25,22 @@ namespace PiperPicker.Proxies
         public IConfiguration Configuration;
         public ILogger<MopidyProxy> Logger;
         private bool _disposedValue;
+        private RadioSelectorOptions _radioSelectorOptions;
         private Task _monitorWebSocketTask;
         private Task _monitorTrackTimePositionTask;
         private Task _monitorEpisodeListPathTask;
+        private Task _monitorBbcTrackInformationTask;
         private static CancellationTokenSource? _cancellationTokenSource;
         private MopidyNowPlayingState _mopidyNowPlayingState;
+        private MopidyTrack? _mopidyCurrentTrack = null;
 
-        public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger<MopidyProxy> logger)
+        public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, IOptions<RadioSelectorOptions> radioSelectorOptions, ILogger<MopidyProxy> logger)
         {
             _client = httpClientFactory.CreateClient();
+            _client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
+
             Configuration = configuration;
+            _radioSelectorOptions = radioSelectorOptions.Value;
             Logger = logger;
             Logger.LogInformation($"{nameof(MopidyProxy)} starting");
             _mopidyEndpoint = Configuration["Mopidy:Endpoint"] ?? throw new ApplicationException("Mopidy:Endpoint not configured");
@@ -40,7 +48,7 @@ namespace PiperPicker.Proxies
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
 
             try
-            { 
+            {
                 if (_cancellationTokenSource is not null)
                     _cancellationTokenSource.Cancel();
                 _cancellationTokenSource = new CancellationTokenSource();
@@ -48,6 +56,7 @@ namespace PiperPicker.Proxies
                 _monitorWebSocketTask = Task.Run(() => MonitorWebSocket(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 _monitorTrackTimePositionTask = Task.Run(() => MonitorTrackTimePosition(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
                 _monitorEpisodeListPathTask = Task.Run(() => MonitorEpisodeListPath(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
+                _monitorBbcTrackInformationTask = Task.Run(() => MonitorBbcTrackInformationTask(_cancellationTokenSource.Token), _cancellationTokenSource.Token);
             }
             catch (Exception ex)
             {
@@ -55,6 +64,16 @@ namespace PiperPicker.Proxies
             }
         }
 
+        public bool IsMopidyCurrentTrackRadioStream()
+        {
+            if (_mopidyCurrentTrack == null)
+                return false;
+            
+            var matchingStreamConfiguration = _radioSelectorOptions.RadioStreams.FirstOrDefault(stream => stream.Uri == _mopidyCurrentTrack.Uri);
+
+            return matchingStreamConfiguration == null;
+        }
+        
         private async Task MonitorTrackTimePosition(CancellationToken cancellationToken)
         {
             while (!cancellationToken.IsCancellationRequested)
@@ -69,7 +88,7 @@ namespace PiperPicker.Proxies
                         _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackPositionMs = trackTimePosition };
                         RaiseEvent(_mopidyNowPlayingState);
                     }
-                } 
+                }
                 catch (OperationCanceledException)
                 {
                     Logger.LogInformation($"Stopping {nameof(MonitorTrackTimePosition)}.");
@@ -123,10 +142,20 @@ namespace PiperPicker.Proxies
                                     }
                                     else if (new[] { "track_playback_started", "track_playback_paused", "track_playback_resumed" }.Contains(message.Event))
                                     {
+                                        var isPaused = message.Event == "track_playback_paused";
+                                        
                                         var playbackStartedMessage = JsonSerializer.Deserialize<MopidyTrackPlaybackStartedMessage>(messageJson, _serialiserOptions);
                                         var nowPlayingDisplayName = GetNowPlayingDisplayName(playbackStartedMessage?.TlTrack.Track);
+                                        _mopidyCurrentTrack = playbackStartedMessage?.TlTrack.Track;
 
-                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? "", TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1 };
+                                        // Common state items
+                                        _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1 };
+
+                                        // State items which depend on source (BBC radio stream, or not)
+                                        _mopidyNowPlayingState = IsMopidyCurrentTrackBbcRadioStream(out var bbcRadioStreamMopidyItem)
+                                            ? await UpdateMopidyNowPlayingStateFromBbc(cancellationToken, bbcRadioStreamMopidyItem, includeTrackDescription: !isPaused) 
+                                            : _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = playbackStartedMessage?.TlTrack.Track.Comment ?? "", TrackUri = playbackStartedMessage?.TlTrack.Track.Uri ?? "file:///", TrackLengthMs = playbackStartedMessage?.TlTrack.Track.Length ?? -1 };
+                                        
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
                                     else if (message.Event == "stream_title_changed")
@@ -314,7 +343,7 @@ namespace PiperPicker.Proxies
                         mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentFilesInDirectory.Count;
                         if (mopidyEpisodeCountOutOfSync)
                             Logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}. Mopidy {mopidyEpisodes.Count} episodes. Directory {currentFilesInDirectory.Count} files.");
-                        
+
                         Logger.LogInformation("Raising episode list event.");
                         RaiseEpisodeListEvent_WithDebounce(mopidyEpisodes);
                     }
@@ -343,17 +372,17 @@ namespace PiperPicker.Proxies
 
                 return newFiles.Any() || disappearedFiles.Any();
             }
-            
+
             IEnumerable<string> FilesInDirectory(string directory)
             {
                 var current = Directory
                     .EnumerateFiles(directory, "*", SearchOption.AllDirectories);
-                
-                    // Mopidy GetEpisodes appears to return all files so I don't need this filter. 
-                    // .Where(f =>
-                    //     Path.GetExtension(f).Equals(".m4a", StringComparison.OrdinalIgnoreCase)
-                    //     && !f.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase)
-                    //);
+
+                // Mopidy GetEpisodes appears to return all files so I don't need this filter. 
+                // .Where(f =>
+                //     Path.GetExtension(f).Equals(".m4a", StringComparison.OrdinalIgnoreCase)
+                //     && !f.EndsWith(".partial.m4a", StringComparison.OrdinalIgnoreCase)
+                //);
                 return current;
             }
         }
@@ -374,10 +403,10 @@ namespace PiperPicker.Proxies
             return mopidyItems.Result;
         }
 
-        public async Task PlayEpisode(string episodeUri)
+        public async Task PlayEpisode(MopidyItem episode)
         {
             await ClearQueue();
-            await MopidyPost("core.tracklist.add", new string[] { episodeUri });
+            await MopidyPost("core.tracklist.add", new string[] { episode.Uri });
             await Play();
         }
 
@@ -385,7 +414,7 @@ namespace PiperPicker.Proxies
         {
             var episodes = await GetEpisodes();
             var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
-            await PlayEpisode(randomEpisode.Uri);
+            await PlayEpisode(randomEpisode);
         }
 
         public async Task ClearQueue()
