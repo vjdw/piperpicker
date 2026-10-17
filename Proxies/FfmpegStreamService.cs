@@ -39,7 +39,7 @@ public sealed class FfmpegStreamService : IDisposable
 
     public void Stop()
     {
-        lock (_lock) StopLocked();
+      // xyzzy keep:  lock (_lock) StopLocked();
     }
 
     private void StopLocked()

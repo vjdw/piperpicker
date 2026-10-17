@@ -170,12 +170,6 @@ namespace PiperPicker.Proxies
                                         // Common state items
                                         _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
 
-                                        // xyzzy tidy
-                                        // State items which depend on source (BBC radio stream, or not)
-                                        //  _mopidyNowPlayingState = IsMopidyCurrentTrackBbcRadioStream(out var bbcRadioStreamMopidyItem)
-                                        //      ? await UpdateMopidyNowPlayingStateFromBbc(cancellationToken, bbcRadioStreamMopidyItem, includeTrackDescription: !isPaused)
-                                        //      : _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = _mopidyCurrentTrack?.Comment ?? "", TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
-
                                         // State items which depend on source (BBC radio stream, or not)
                                         if (IsMopidyCurrentTrackBbcRadioStream(out var bbcRadioStreamMopidyItem))
                                         {
