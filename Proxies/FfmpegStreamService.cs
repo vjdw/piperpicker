@@ -13,24 +13,27 @@ public sealed class FfmpegStreamService : IDisposable
     {
         lock (_lock)
         {
-            StopLocked();
-
-            var psi = new ProcessStartInfo("ffmpeg")
+            if (_process is null || _process.HasExited || _stationId != stationId)
             {
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-            };
-            foreach (var a in new[]
-                     {
-                         "-nostdin", "-loglevel", "warning",
-                         "-i", sourceUri,
-                         "-vn", "-c:a", "copy",
-                         "-f", "adts", "pipe:1"
-                     })
-                psi.ArgumentList.Add(a);
+                StopLocked();
 
-            _process = Process.Start(psi)!;
-            _stationId = stationId;
+                var psi = new ProcessStartInfo("ffmpeg")
+                {
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                };
+                foreach (var a in new[]
+                         {
+                             "-nostdin", "-loglevel", "warning",
+                             "-i", sourceUri,
+                             "-vn", "-c:a", "copy",
+                             "-f", "adts", "pipe:1"
+                         })
+                    psi.ArgumentList.Add(a);
+
+                _process = Process.Start(psi)!;
+                _stationId = stationId;
+            }
         }
     }
 
