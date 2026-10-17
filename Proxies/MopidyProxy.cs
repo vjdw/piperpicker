@@ -47,6 +47,7 @@ namespace PiperPicker.Proxies
             _logger = logger;
             _logger.LogInformation($"{nameof(MopidyProxy)} starting");
             _client = httpClientFactory.CreateClient();
+            _client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
             _mopidyWebSocketEndpoint = _configuration["Mopidy:WebSocketEndpoint"] ?? throw new ApplicationException("Mopidy:WebSocketEndpoint not configured");
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
             Rpc = new MopidyCaller(httpClientFactory, _configuration, logger);
