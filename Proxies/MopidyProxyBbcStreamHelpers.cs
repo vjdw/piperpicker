@@ -14,11 +14,12 @@ public partial class MopidyProxy
         if (_mopidyCurrentTrack == null)
             return false;
 
-        matchingStreamConfiguration = _radioSelectorOptions.RadioStreams.FirstOrDefault(stream => stream.Uri == _mopidyCurrentTrack.Uri);
-        if (matchingStreamConfiguration == null)
-            return false;
+        matchingStreamConfiguration = _radioSelectorOptions.RadioStreams.FirstOrDefault(stream =>
+            !string.IsNullOrEmpty(stream.BbcStationId)
+            && _mopidyCurrentTrack.Uri.Contains(stream.BbcStationId)
+        );
 
-        return !string.IsNullOrEmpty(matchingStreamConfiguration.BbcStationId);
+        return matchingStreamConfiguration != null;
     }
 
     private async Task MonitorBbcTrackInformationTask(CancellationToken cancellationToken)
@@ -53,11 +54,18 @@ public partial class MopidyProxy
         BbcNowPlayingTitles? bbcTrackTitles = null;
         if (includeTrackDescription)
         {
-            var bbcNowPlayingUrl = $"https://rms.api.bbc.co.uk/v2/services/{bbcRadioStreamMopidyItem.BbcStationId}/segments/latest?experience=domestic&offset=0&limit=1";
-            var bbcNowPlaying = await _client.GetFromJsonAsync<BbcNowPlaying>(bbcNowPlayingUrl, cancellationToken);
-            bbcTrackTitles = bbcNowPlaying?.Data.FirstOrDefault()?.Titles;
-            if (bbcTrackTitles == null)
-                _logger.LogWarning($"No BBC radio track titles found for '{bbcNowPlayingUrl}'");
+            try
+            {
+                var bbcNowPlayingUrl = $"https://rms.api.bbc.co.uk/v2/services/{bbcRadioStreamMopidyItem.BbcStationId}/segments/latest?experience=domestic&offset=0&limit=1";
+                var bbcNowPlaying = await _client.GetFromJsonAsync<BbcNowPlaying>(bbcNowPlayingUrl, cancellationToken);
+                bbcTrackTitles = bbcNowPlaying?.Data.FirstOrDefault()?.Titles;
+                if (bbcTrackTitles == null)
+                    _logger.LogWarning($"No BBC radio track titles found for '{bbcNowPlayingUrl}'");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calling BBC Now Playing service.");
+            }
         }
 
         return _mopidyNowPlayingState with

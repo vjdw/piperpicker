@@ -19,10 +19,7 @@ public partial class MopidyProxy
         {
             _configuration = configuration;
             _logger = logger;
-                
             _client = httpClientFactory.CreateClient();
-            _client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
-
             _mopidyEndpoint = _configuration["Mopidy:Endpoint"] ?? throw new ApplicationException("Mopidy:Endpoint not configured");
         }
 
@@ -44,7 +41,7 @@ public partial class MopidyProxy
         {
             await MopidyPost("core.tracklist.clear");
         }
-
+        
         public async Task Play()
         {
             await MopidyPost("core.playback.play");
