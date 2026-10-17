@@ -218,27 +218,6 @@ namespace PiperPicker.Proxies
 
         private record MopidyBaseMessage(string Event);
 
-        private async Task<StateDto> GetState()
-        {
-            var responseContent = await MopidyPost("core.playback.get_state");
-            return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
-        }
-
-        private async Task<int> GetTimePositionMs()
-        {
-            try
-            {
-                var timePositionResponseContent = await MopidyPost("core.playback.get_time_position");
-                var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(timePositionResponseContent, _serialiserOptions);
-                return timePositionResponse?.Result ?? -1;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Error in GetTimePositionMs");
-                return -1;
-            }
-        }
-
         public async Task<MopidyNowPlayingState> GetNowPlaying(bool refreshCache = false)
         {
             if (refreshCache || _mopidyNowPlayingState == null)
@@ -248,24 +227,20 @@ namespace PiperPicker.Proxies
 
             return _mopidyNowPlayingState;
         }
-
+        
         private async Task<MopidyNowPlayingState> GetNowPlayingActual()
         {
             try
             {
-                var currentTrackResponseTask = MopidyPost("core.playback.get_current_track");
-                var stateResponseTask = MopidyPost("core.playback.get_state");
+                var currentTrackResponseTask = GetCurrentTrack();
+                var stateResponseTask = GetState();
                 var trackPositionTask = GetTimePositionMs();
-
-                var currentTrackResponse = await currentTrackResponseTask;
-                var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
-
+                var nowPlaying = await currentTrackResponseTask;
                 var state = await stateResponseTask;
-                var stateResponse = JsonSerializer.Deserialize<StateDto>(state, _serialiserOptions);
-                var isPlaying = (stateResponse?.Result ?? "") == "playing";
-                var nowPlayingName = GetNowPlayingDisplayName(nowPlaying);
                 var trackPosition = await trackPositionTask;
-
+                
+                var isPlaying = state.Result == "playing";
+                var nowPlayingName = GetNowPlayingDisplayName(nowPlaying);
                 return new MopidyNowPlayingState(isPlaying, nowPlayingName, nowPlaying?.Result?.Comment ?? "", nowPlaying?.Result?.Uri ?? "file:///", trackPosition, nowPlaying?.Result?.Length ?? -1);
             }
             catch (Exception ex)
@@ -391,6 +366,13 @@ namespace PiperPicker.Proxies
             }
         }
 
+        public async Task PlayRandomEpisode()
+        {
+            var episodes = await GetEpisodes();
+            var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
+            await PlayEpisode(randomEpisode);
+        }
+
         public async Task<IList<MopidyItem>> GetEpisodes()
         {
             var pathInMopidyFormat = $"file:///{Configuration["Mopidy:EpisodeList:Path"]}";
@@ -414,13 +396,6 @@ namespace PiperPicker.Proxies
             await Play();
         }
 
-        public async Task PlayRandomEpisode()
-        {
-            var episodes = await GetEpisodes();
-            var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
-            await PlayEpisode(randomEpisode);
-        }
-
         public async Task ClearQueue()
         {
             await MopidyPost("core.tracklist.clear");
@@ -431,17 +406,22 @@ namespace PiperPicker.Proxies
             await MopidyPost("core.playback.play");
         }
 
+        public async Task Pause()
+        {
+            await MopidyPost("core.playback.pause");
+        }
+
         public async Task<string> TogglePause()
         {
             var state = await GetState();
             if (state.Result == "playing")
             {
-                await MopidyPost("core.playback.pause");
+                await Pause();
                 return "paused";
             }
             else
             {
-                await MopidyPost("core.playback.play");
+                await Play();
                 return "playing";
             }
         }
@@ -455,6 +435,34 @@ namespace PiperPicker.Proxies
                 var newPositionMs = timePositionResponse.Result + seekMs;
                 await MopidyPost("core.playback.seek", seekPositionMs: newPositionMs);
             }
+        }
+
+        private async Task<int> GetTimePositionMs()
+        {
+            try
+            {
+                var timePositionResponseContent = await MopidyPost("core.playback.get_time_position");
+                var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(timePositionResponseContent, _serialiserOptions);
+                return timePositionResponse?.Result ?? -1;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error in GetTimePositionMs");
+                return -1;
+            }
+        }
+
+        private async Task<StateDto> GetState()
+        {
+            var responseContent = await MopidyPost("core.playback.get_state");
+            return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
+        }
+        
+        private async Task<NowPlayingResponse?> GetCurrentTrack()
+        {
+            var currentTrackResponse = await MopidyPost("core.playback.get_current_track");
+            var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
+            return nowPlaying;
         }
 
         private async Task<string> MopidyPost(string method, string[] targetUris)
