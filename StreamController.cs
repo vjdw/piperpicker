@@ -19,7 +19,7 @@ public class StreamController(FfmpegStreamService ffmpeg, IOptions<RadioSelector
         }
         
         ffmpeg.Start(stationId, streamMopidyItem.ExternalUri);
-        await Task.Delay(1000, requestAborted); // xyzzy could be reduced?
+        //await Task.Delay(1000, requestAborted); // xyzzy could be reduced?
         
         var source = ffmpeg.TryAttach(stationId, requestAborted, out var token);
         if (source is null)

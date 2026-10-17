@@ -153,7 +153,8 @@ namespace PiperPicker.Proxies
                                         {
                                             // BBC stream has become paused, and it is an ffmpeg stream, so stop ffmpeg.
                                             _logger.LogInformation($"Stopping HLS demuxer for station {streamStationId} because received {playbackStateChangedMessage!.NewState} event.");
-                                            await StopFfmpegHlsDemuxer(cancellationToken);
+                                            //await StopFfmpegHlsDemuxer(cancellationToken);
+                                            _streamService.Stop();
                                         }
 
                                         RaiseEvent(_mopidyNowPlayingState);
@@ -186,7 +187,8 @@ namespace PiperPicker.Proxies
                                             {
                                                 // BBC stream has become paused, and it is an ffmpeg stream, so stop ffmpeg.
                                                 _logger.LogInformation($"Stopping HLS demuxer for station {streamStationId} because received track_playback_paused event.");
-                                                await StopFfmpegHlsDemuxer(cancellationToken);
+                                                //await StopFfmpegHlsDemuxer(cancellationToken);
+                                                _streamService.Stop();
                                             }
                                             // else if (!isFfmegStream)
                                             // {
