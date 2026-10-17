@@ -14,10 +14,9 @@ namespace PiperPicker.Proxies
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
-        private string _mopidyEndpoint;
         private string _mopidyWebSocketEndpoint;
         private HttpClient _client;
-        private Random _random = new Random();
+        public MopidyCaller _mopidyCaller;
 
         public event MopidyNotificationEventHandler? OnMopidyNotification;
         public event MopidyEpisodeListNotificationEventHandler? OnMopidyEpisodeListNotification;
@@ -36,16 +35,14 @@ namespace PiperPicker.Proxies
 
         public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, IOptions<RadioSelectorOptions> radioSelectorOptions, ILogger<MopidyProxy> logger)
         {
-            _client = httpClientFactory.CreateClient();
-            _client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
-
             Configuration = configuration;
             _radioSelectorOptions = radioSelectorOptions.Value;
             Logger = logger;
             Logger.LogInformation($"{nameof(MopidyProxy)} starting");
-            _mopidyEndpoint = Configuration["Mopidy:Endpoint"] ?? throw new ApplicationException("Mopidy:Endpoint not configured");
+            _client = httpClientFactory.CreateClient();
             _mopidyWebSocketEndpoint = Configuration["Mopidy:WebSocketEndpoint"] ?? throw new ApplicationException("Mopidy:WebSocketEndpoint not configured");
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
+            _mopidyCaller = new MopidyCaller(httpClientFactory, Configuration, logger);
 
             try
             {
@@ -60,7 +57,7 @@ namespace PiperPicker.Proxies
             }
             catch (Exception ex)
             {
-                throw new ApplicationException($"MopidyProxy could not connect to mopidy websocket on {_mopidyEndpoint}", ex);
+                throw new ApplicationException($"MopidyProxy could not connect to mopidy websocket on {_mopidyWebSocketEndpoint}", ex);
             }
         }
 
@@ -84,7 +81,7 @@ namespace PiperPicker.Proxies
 
                     if (_mopidyNowPlayingState.IsPlaying)
                     {
-                        var trackTimePosition = await GetTimePositionMs();
+                        var trackTimePosition = await _mopidyCaller.GetTimePositionMs();
                         _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackPositionMs = trackTimePosition };
                         RaiseEvent(_mopidyNowPlayingState);
                     }
@@ -227,18 +224,18 @@ namespace PiperPicker.Proxies
 
             return _mopidyNowPlayingState;
         }
-        
+
         private async Task<MopidyNowPlayingState> GetNowPlayingActual()
         {
             try
             {
-                var currentTrackResponseTask = GetCurrentTrack();
-                var stateResponseTask = GetState();
-                var trackPositionTask = GetTimePositionMs();
+                var currentTrackResponseTask = _mopidyCaller.GetCurrentTrack();
+                var stateResponseTask = _mopidyCaller.GetState();
+                var trackPositionTask = _mopidyCaller.GetTimePositionMs();
                 var nowPlaying = await currentTrackResponseTask;
                 var state = await stateResponseTask;
                 var trackPosition = await trackPositionTask;
-                
+
                 var isPlaying = state.Result == "playing";
                 var nowPlayingName = GetNowPlayingDisplayName(nowPlaying);
                 return new MopidyNowPlayingState(isPlaying, nowPlayingName, nowPlaying?.Result?.Comment ?? "", nowPlaying?.Result?.Uri ?? "file:///", trackPosition, nowPlaying?.Result?.Length ?? -1);
@@ -316,7 +313,7 @@ namespace PiperPicker.Proxies
 
                     if (shouldGetEpisodesFromMopidy)
                     {
-                        var mopidyEpisodes = await GetEpisodes();
+                        var mopidyEpisodes = await _mopidyCaller.GetEpisodes();
                         mopidyLastSyncUtc = DateTime.UtcNow;
 
                         mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentFilesInDirectory.Count;
@@ -366,143 +363,169 @@ namespace PiperPicker.Proxies
             }
         }
 
-        public async Task PlayRandomEpisode()
+        public class MopidyCaller
         {
-            var episodes = await GetEpisodes();
-            var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
-            await PlayEpisode(randomEpisode);
-        }
+            private IConfiguration Configuration;
+            private ILogger _logger;
+            private HttpClient _client;
+            private string _mopidyEndpoint;
+            private Random _random = new Random();
 
-        public async Task<IList<MopidyItem>> GetEpisodes()
-        {
-            var pathInMopidyFormat = $"file:///{Configuration["Mopidy:EpisodeList:Path"]}";
-            await MopidyPost("core.library.refresh", pathInMopidyFormat);
-            var responseContent = await MopidyPost("core.library.browse", pathInMopidyFormat);
-            var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent, _serialiserOptions);
-
-            if (mopidyItems == null)
+            public MopidyCaller(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger logger)
             {
-                Logger.LogError($"Deserialising response from Mopidy core.library.browse gave null result.");
-                return new List<MopidyItem>();
+                Configuration = configuration;
+                _logger = logger;
+                
+                _client = httpClientFactory.CreateClient();
+                _client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
+
+                _mopidyEndpoint = Configuration["Mopidy:Endpoint"] ?? throw new ApplicationException("Mopidy:Endpoint not configured");
             }
 
-            return mopidyItems.Result;
-        }
-
-        public async Task PlayEpisode(MopidyItem episode)
-        {
-            await ClearQueue();
-            await MopidyPost("core.tracklist.add", new string[] { episode.Uri });
-            await Play();
-        }
-
-        public async Task ClearQueue()
-        {
-            await MopidyPost("core.tracklist.clear");
-        }
-
-        public async Task Play()
-        {
-            await MopidyPost("core.playback.play");
-        }
-
-        public async Task Pause()
-        {
-            await MopidyPost("core.playback.pause");
-        }
-
-        public async Task<string> TogglePause()
-        {
-            var state = await GetState();
-            if (state.Result == "playing")
+            public async Task PlayRandomEpisode()
             {
-                await Pause();
-                return "paused";
+                var episodes = await GetEpisodes();
+                var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
+                await PlayEpisode(randomEpisode);
             }
-            else
+
+            public async Task PlayEpisode(MopidyItem episode)
             {
+                await ClearQueue();
+                await MopidyPost("core.tracklist.add", new string[] { episode.Uri });
                 await Play();
-                return "playing";
             }
-        }
 
-        public async Task SeekRelative(int seekMs)
-        {
-            var responseContent = await MopidyPost("core.playback.get_time_position");
-            var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(responseContent, _serialiserOptions);
-            if (timePositionResponse != null)
+            public async Task ClearQueue()
             {
-                var newPositionMs = timePositionResponse.Result + seekMs;
-                await MopidyPost("core.playback.seek", seekPositionMs: newPositionMs);
+                await MopidyPost("core.tracklist.clear");
             }
-        }
 
-        private async Task<int> GetTimePositionMs()
-        {
-            try
+            public async Task Play()
             {
-                var timePositionResponseContent = await MopidyPost("core.playback.get_time_position");
-                var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(timePositionResponseContent, _serialiserOptions);
-                return timePositionResponse?.Result ?? -1;
+                await MopidyPost("core.playback.play");
             }
-            catch (Exception ex)
+
+            public async Task Pause()
             {
-                Logger.LogError(ex, "Error in GetTimePositionMs");
-                return -1;
+                await MopidyPost("core.playback.pause");
             }
+
+            public async Task<string> TogglePause()
+            {
+                var state = await GetState();
+                if (state.Result == "playing")
+                {
+                    await Pause();
+                    return "paused";
+                }
+                else
+                {
+                    await Play();
+                    return "playing";
+                }
+            }
+
+            public async Task SeekRelative(int seekMs)
+            {
+                var responseContent = await MopidyPost("core.playback.get_time_position");
+                var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(responseContent, _serialiserOptions);
+                if (timePositionResponse != null)
+                {
+                    var newPositionMs = timePositionResponse.Result + seekMs;
+                    await MopidyPost("core.playback.seek", seekPositionMs: newPositionMs);
+                }
+            }
+
+            public async Task<int> GetTimePositionMs()
+            {
+                try
+                {
+                    var timePositionResponseContent = await MopidyPost("core.playback.get_time_position");
+                    var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(timePositionResponseContent, _serialiserOptions);
+                    return timePositionResponse?.Result ?? -1;
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error in GetTimePositionMs");
+                    return -1;
+                }
+            }
+
+            public async Task<StateDto> GetState()
+            {
+                var responseContent = await MopidyPost("core.playback.get_state");
+                return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
+            }
+
+            public async Task<NowPlayingResponse?> GetCurrentTrack()
+            {
+                var currentTrackResponse = await MopidyPost("core.playback.get_current_track");
+                var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
+                return nowPlaying;
+            }
+
+            public async Task<IList<MopidyItem>> GetEpisodes()
+            {
+                var pathInMopidyFormat = $"file:///{Configuration["Mopidy:EpisodeList:Path"]}";
+                await MopidyPost("core.library.refresh", pathInMopidyFormat);
+                var responseContent = await MopidyPost("core.library.browse", pathInMopidyFormat);
+                var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent, _serialiserOptions);
+
+                if (mopidyItems == null)
+                {
+                    _logger.LogError($"Deserialising response from Mopidy core.library.browse gave null result.");
+                    return new List<MopidyItem>();
+                }
+
+                return mopidyItems.Result;
+            }
+
+            private async Task<string> MopidyPost(string method, string[] targetUris)
+            {
+                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris, _serialiserOptions)}}} }}";
+                var content = new StringContent(requestContent);
+                content.Headers.Clear();
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                var response = await _client.PostAsync($"{_mopidyEndpoint}", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return responseContent;
+            }
+
+            private async Task<string> MopidyPost(string method)
+            {
+                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" }}";
+                return await MopidyPostActual(requestContent);
+            }
+
+            private async Task<string> MopidyPost(string method, string targetUri)
+            {
+                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"uri\":\"{targetUri}\"}}"} }}";
+                return await MopidyPostActual(requestContent);
+            }
+
+            private async Task<string> MopidyPost(string method, int seekPositionMs)
+            {
+                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"time_position\":{seekPositionMs}}}"} }}";
+                return await MopidyPostActual(requestContent);
+            }
+
+            private async Task<string> MopidyPostActual(string requestContent)
+            {
+                var content = new StringContent(requestContent);
+                content.Headers.Clear();
+                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
+                var response = await _client.PostAsync($"{_mopidyEndpoint}", content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                return responseContent;
+            }
+
+            private JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            };
         }
 
-        private async Task<StateDto> GetState()
-        {
-            var responseContent = await MopidyPost("core.playback.get_state");
-            return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
-        }
-        
-        private async Task<NowPlayingResponse?> GetCurrentTrack()
-        {
-            var currentTrackResponse = await MopidyPost("core.playback.get_current_track");
-            var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
-            return nowPlaying;
-        }
-
-        private async Task<string> MopidyPost(string method, string[] targetUris)
-        {
-            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris, _serialiserOptions)}}} }}";
-            var content = new StringContent(requestContent);
-            content.Headers.Clear();
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            var response = await _client.PostAsync($"{_mopidyEndpoint}", content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-            return responseContent;
-        }
-
-        private async Task<string> MopidyPost(string method)
-        {
-            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" }}";
-            return await MopidyPostActual(requestContent);
-        }
-
-        private async Task<string> MopidyPost(string method, string targetUri)
-        {
-            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"uri\":\"{targetUri}\"}}"} }}";
-            return await MopidyPostActual(requestContent);
-        }
-
-        private async Task<string> MopidyPost(string method, int seekPositionMs)
-        {
-            var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"time_position\":{seekPositionMs}}}"} }}";
-            return await MopidyPostActual(requestContent);
-        }
-
-        private async Task<string> MopidyPostActual(string requestContent)
-        {
-            var content = new StringContent(requestContent);
-            content.Headers.Clear();
-            content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-            var response = await _client.PostAsync($"{_mopidyEndpoint}", content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-            return responseContent;
-        }
 
         private void RaiseEvent(MopidyNowPlayingState mopidyNowPlayingState)
         {

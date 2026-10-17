@@ -30,7 +30,7 @@
     {
         if (_episodes == null)
         {
-            var episodes = await MopidyProxy.GetEpisodes();
+            var episodes = await MopidyProxy._mopidyCaller.GetEpisodes();
             await LoadEpisodeList(episodes);
         }
 
