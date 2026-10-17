@@ -188,12 +188,12 @@ namespace PiperPicker.Proxies
                                                 _logger.LogInformation($"Stopping HLS demuxer for station {streamStationId} because received track_playback_paused event.");
                                                 await StopFfmpegHlsDemuxer(cancellationToken);
                                             }
-                                            // else if (!isFfmegStream)
-                                            // {
-                                            //     // BBC stream has started/resumed, and is not already an ffmpeg stream, so start ffmpeg.
-                                            //     _logger.LogInformation($"Starting HLS demuxer for station {streamStationId} because received {message.Event} event for stream {_mopidyCurrentTrack?.Uri}.");
-                                            //     await InjectFfmpegHlsDemuxer(bbcRadioStreamMopidyItem, cancellationToken);
-                                            // }
+                                            else if (!isFfmegStream)
+                                            {
+                                                // BBC stream has started/resumed, and is not already an ffmpeg stream, so start ffmpeg.
+                                                _logger.LogInformation($"Starting HLS demuxer for station {streamStationId} because received {message.Event} event for stream {_mopidyCurrentTrack?.Uri}.");
+                                                await InjectFfmpegHlsDemuxer(bbcRadioStreamMopidyItem, cancellationToken);
+                                            }
                                         }
                                         else
                                         {

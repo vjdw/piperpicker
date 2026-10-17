@@ -1,25 +1,15 @@
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using PiperPicker.Models;
 using PiperPicker.Proxies;
 
 namespace piperpicker;
 
 [ApiController]
-public class StreamController(FfmpegStreamService ffmpeg, IOptions<RadioSelectorOptions> radioSelectorOptions) : ControllerBase
+public class StreamController(FfmpegStreamService ffmpeg) : ControllerBase
 {
     [HttpGet("/stream/{stationId}.aac")]
     public async Task Get(string stationId, CancellationToken requestAborted)
     {
-        var streamMopidyItem = radioSelectorOptions.Value.RadioStreams.FirstOrDefault(s => s.BbcStationId == stationId);
-        if (streamMopidyItem?.ExternalUri == null)
-        {
-            Response.StatusCode = StatusCodes.Status404NotFound;
-            return;
-        }
-        
-        ffmpeg.Start(stationId, streamMopidyItem.ExternalUri);
-        await Task.Delay(1000, requestAborted); // xyzzy could be reduced?
+        ffmpeg.Start(stationId, "http://as-hls-ww-live.akamaized.net/pool_23461179/live/ww/bbc_radio_three/bbc_radio_three.isml/bbc_radio_three-audio%3d96000.norewind.m3u8");
         
         var source = ffmpeg.TryAttach(stationId, requestAborted, out var token);
         if (source is null)
