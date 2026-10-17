@@ -10,6 +10,7 @@ builder.Services
     {
         options.ClientTimeoutInterval = TimeSpan.FromMinutes(3);
     });
+builder.Services.AddControllers();
 builder.Services.AddHttpClient();
 
 builder.Services.Configure<RadioSelectorOptions>(builder.Configuration.GetSection(RadioSelectorOptions.SectionName));
@@ -17,12 +18,15 @@ builder.Services.Configure<RadioSelectorOptions>(builder.Configuration.GetSectio
 // Needs to be scoped to match how snapcast's JSON RPC calls work (the RPC sender doesn't receive notifications of that change).
 // So if piperpicker is open in multiple browsers, each needs its own instance of SnapcastClientProxy to correctly get notifications of volume change.
 builder.Services.AddScoped(sp => new SnapcastClientProxy(sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<ILogger<SnapcastClientProxy>>()));
-builder.Services.AddSingleton(sp => new MopidyProxy(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IOptions<RadioSelectorOptions>>(), sp.GetRequiredService<ILogger<MopidyProxy>>()));
+
+builder.Services.AddSingleton<FfmpegStreamService>();
+builder.Services.AddSingleton(sp => new MopidyProxy(sp.GetRequiredService<IHttpClientFactory>(), sp.GetRequiredService<FfmpegStreamService>(), sp.GetRequiredService<IConfiguration>(), sp.GetRequiredService<IOptions<RadioSelectorOptions>>(), sp.GetRequiredService<ILogger<MopidyProxy>>()));
 
 var app = builder.Build();
 app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
+app.MapControllers();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
