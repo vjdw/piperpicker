@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
@@ -18,10 +17,10 @@ namespace PiperPicker.Proxies
         /// Mopidy Remote Procedure Caller.
         /// </summary>
         public readonly MopidyCaller Rpc;
-
+        
         public event MopidyNotificationEventHandler? OnMopidyNotification;
         public event MopidyEpisodeListNotificationEventHandler? OnMopidyEpisodeListNotification;
-
+        
         private readonly JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -33,14 +32,13 @@ namespace PiperPicker.Proxies
         private readonly ILogger<MopidyProxy> _logger;
         private bool _disposedValue;
         private readonly RadioSelectorOptions _radioSelectorOptions;
-        private static CancellationTokenSource? _cancellationTokenSource;
-        private MopidyNowPlayingState _mopidyNowPlayingState;
-        private MopidyTrack? _mopidyCurrentTrack = null;
-
         private Task _monitorWebSocketTask;
         private Task _monitorTrackTimePositionTask;
         private Task _monitorEpisodeListPathTask;
         private Task _monitorBbcTrackInformationTask;
+        private static CancellationTokenSource? _cancellationTokenSource;
+        private MopidyNowPlayingState _mopidyNowPlayingState;
+        private MopidyTrack? _mopidyCurrentTrack = null;
 
         public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, IOptions<RadioSelectorOptions> radioSelectorOptions, ILogger<MopidyProxy> logger)
         {
@@ -49,7 +47,6 @@ namespace PiperPicker.Proxies
             _logger = logger;
             _logger.LogInformation($"{nameof(MopidyProxy)} starting");
             _client = httpClientFactory.CreateClient();
-            _client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
             _mopidyWebSocketEndpoint = _configuration["Mopidy:WebSocketEndpoint"] ?? throw new ApplicationException("Mopidy:WebSocketEndpoint not configured");
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
             Rpc = new MopidyCaller(httpClientFactory, _configuration, logger);
@@ -143,16 +140,8 @@ namespace PiperPicker.Proxies
                                     if (message.Event == "playback_state_changed")
                                     {
                                         var playbackStateChangedMessage = JsonSerializer.Deserialize<MopidyPlaybackStateChangedMessage>(messageJson, _serialiserOptions);
+
                                         _mopidyNowPlayingState = _mopidyNowPlayingState with { IsPlaying = playbackStateChangedMessage!.NewState == "playing" };
-
-                                        var isFfmegStream = _mopidyCurrentTrack?.Uri == _ffmpegStreamUri;
-                                        if (!_mopidyNowPlayingState.IsPlaying && isFfmegStream)
-                                        {
-                                            // BBC stream has become paused, and it is an ffmpeg stream, so stop ffmpeg.
-                                            _logger.LogInformation($"Stopping HLS demuxer stream {_ffmpegStreamUri} because received {playbackStateChangedMessage!.NewState} event.");
-                                            await StopFfmpegHlsDemuxer(cancellationToken);
-                                        }
-
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
                                     else if (new[] { "track_playback_started", "track_playback_paused", "track_playback_resumed" }.Contains(message.Event))
@@ -166,42 +155,10 @@ namespace PiperPicker.Proxies
                                         // Common state items
                                         _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
 
-                                        // xyzzy tidy
                                         // State items which depend on source (BBC radio stream, or not)
-                                        //  _mopidyNowPlayingState = IsMopidyCurrentTrackBbcRadioStream(out var bbcRadioStreamMopidyItem)
-                                        //      ? await UpdateMopidyNowPlayingStateFromBbc(cancellationToken, bbcRadioStreamMopidyItem, includeTrackDescription: !isPaused)
-                                        //      : _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = _mopidyCurrentTrack?.Comment ?? "", TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
-
-                                        // State items which depend on source (BBC radio stream, or not)
-                                        if (IsMopidyCurrentTrackBbcRadioStream(out var bbcRadioStreamMopidyItem))
-                                        {
-                                            _mopidyNowPlayingState = await UpdateMopidyNowPlayingStateFromBbc(cancellationToken, bbcRadioStreamMopidyItem, includeTrackDescription: !isPaused);
-
-                                            var isFfmegStream = _mopidyCurrentTrack?.Uri == _ffmpegStreamUri;
-                                            if (isPaused && isFfmegStream)
-                                            {
-                                                // BBC stream has become paused, and it is an ffmpeg stream, so stop ffmpeg.
-                                                _logger.LogInformation($"Stopping HLS demuxer stream {_ffmpegStreamUri} because received track_playback_paused event.");
-                                                await StopFfmpegHlsDemuxer(cancellationToken);
-                                            }
-                                            else if (!isFfmegStream)
-                                            {
-                                                // BBC stream has started/resumed, and is not already an ffmpeg stream, so start ffmpeg.
-                                                _logger.LogInformation($"Starting HLS demuxer stream {_ffmpegStreamUri} because received {message.Event} event for stream {_mopidyCurrentTrack?.Uri}.");
-                                                await InjectFfmpegHlsDemuxer(bbcRadioStreamMopidyItem, cancellationToken);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            if (!string.IsNullOrEmpty(_ffmpegStreamUri))
-                                            {
-                                                // Non-BBC streams do not use the ffmpeg HLS demuxer.
-                                                _logger.LogInformation($"Stopping HLS demuxer stream {_ffmpegStreamUri} for new stream {_mopidyCurrentTrack?.Uri}.");
-                                                await StopFfmpegHlsDemuxer(cancellationToken);
-                                            }
-
-                                            _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = _mopidyCurrentTrack?.Comment ?? "", TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
-                                        }
+                                        _mopidyNowPlayingState = IsMopidyCurrentTrackBbcRadioStream(out var bbcRadioStreamMopidyItem)
+                                            ? await UpdateMopidyNowPlayingStateFromBbc(cancellationToken, bbcRadioStreamMopidyItem, includeTrackDescription: !isPaused)
+                                            : _mopidyNowPlayingState with { TrackName = nowPlayingDisplayName, TrackDescription = _mopidyCurrentTrack?.Comment ?? "", TrackUri = _mopidyCurrentTrack?.Uri ?? "file:///", TrackLengthMs = _mopidyCurrentTrack?.Length ?? -1 };
 
                                         RaiseEvent(_mopidyNowPlayingState);
                                     }
@@ -244,64 +201,6 @@ namespace PiperPicker.Proxies
                     _logger.LogError(ex, "Error in websocket communication with mopidy");
                     await Task.Delay(10000, cancellationToken);
                 }
-            }
-        }
-
-        // xyzzy move
-        private Process? _ffmpegProcess = null;
-        private string? _ffmpegStreamUri = null;
-        private readonly SemaphoreSlim _ffmpegProcessSemaphore = new(1);
-
-        // xyzzy move
-        private async Task InjectFfmpegHlsDemuxer(MopidyItem episode, CancellationToken cancellationToken)
-        {
-            if (string.IsNullOrEmpty(episode.BbcStationId))
-            {
-                _logger.LogError($"Tried to inject FfmpegHlsDemuxer for MopidyItem without BbcStationId: {episode.Uri}");
-                return;
-            }
-
-            await _ffmpegProcessSemaphore.WaitAsync(cancellationToken);
-            try
-            {
-                // Start ffmpeg on the HLS radio stream, outputting demuxed AAC to local stream.
-                _ffmpegStreamUri = $"http://127.0.0.1:8099/{episode.BbcStationId}.aac";
-                _ffmpegProcess = new Process();
-                _ffmpegProcess.StartInfo.FileName = "ffmpeg";
-                _ffmpegProcess.StartInfo.Arguments = $"-i \"{episode.Uri}\" -vn -c:a copy -f adts -listen 1 {_ffmpegStreamUri}";
-                _ffmpegProcess.Start();
-                await Task.Delay(100, cancellationToken);
-
-                // Point mopidy to the local stream coming from ffmpeg.
-                await Rpc.PlayEpisode(new MopidyItem { Name = episode.BbcStationId, Uri = _ffmpegStreamUri, BbcStationId = episode.BbcStationId });
-            }
-            catch (Exception ex)
-            {
-                _ffmpegStreamUri = null;
-                _logger.LogError(ex, "Error starting ffmpeg for HLS dumuxing.");
-            }
-            finally
-            {
-                _ffmpegProcessSemaphore.Release();
-            }
-        }
-
-        // xyzzy move
-        private async Task StopFfmpegHlsDemuxer(CancellationToken cancellationToken)
-        {
-            await _ffmpegProcessSemaphore.WaitAsync(cancellationToken);
-            try
-            {
-                if (_ffmpegProcess != null)
-                {
-                    _ffmpegProcess.Kill();
-                    _ffmpegProcess = null;
-                    _ffmpegStreamUri = null;
-                }
-            }
-            finally
-            {
-                _ffmpegProcessSemaphore.Release();
             }
         }
 
