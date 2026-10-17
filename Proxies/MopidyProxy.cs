@@ -7,24 +7,31 @@ using PiperPicker.Models;
 
 namespace PiperPicker.Proxies
 {
+    /// <summary>
+    /// Runs background tasks to track Mopidy state by poll and websocket.
+    /// Provides a mopidy remote procedure caller to Blazor components.
+    /// </summary>
     public partial class MopidyProxy : IDisposable
     {
-        private JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
+        /// <summary>
+        /// Mopidy Remote Procedure Caller.
+        /// </summary>
+        public readonly MopidyCaller Rpc;
+        
+        public event MopidyNotificationEventHandler? OnMopidyNotification;
+        public event MopidyEpisodeListNotificationEventHandler? OnMopidyEpisodeListNotification;
+        
+        private readonly JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         };
 
-        private string _mopidyWebSocketEndpoint;
-        private HttpClient _client;
-        public MopidyCaller _mopidyCaller;
-
-        public event MopidyNotificationEventHandler? OnMopidyNotification;
-        public event MopidyEpisodeListNotificationEventHandler? OnMopidyEpisodeListNotification;
-
-        public IConfiguration Configuration;
-        public ILogger<MopidyProxy> Logger;
+        private readonly string _mopidyWebSocketEndpoint;
+        private readonly HttpClient _client;
+        private readonly IConfiguration _configuration;
+        private readonly ILogger<MopidyProxy> _logger;
         private bool _disposedValue;
-        private RadioSelectorOptions _radioSelectorOptions;
+        private readonly RadioSelectorOptions _radioSelectorOptions;
         private Task _monitorWebSocketTask;
         private Task _monitorTrackTimePositionTask;
         private Task _monitorEpisodeListPathTask;
@@ -35,14 +42,14 @@ namespace PiperPicker.Proxies
 
         public MopidyProxy(IHttpClientFactory httpClientFactory, IConfiguration configuration, IOptions<RadioSelectorOptions> radioSelectorOptions, ILogger<MopidyProxy> logger)
         {
-            Configuration = configuration;
+            _configuration = configuration;
             _radioSelectorOptions = radioSelectorOptions.Value;
-            Logger = logger;
-            Logger.LogInformation($"{nameof(MopidyProxy)} starting");
+            _logger = logger;
+            _logger.LogInformation($"{nameof(MopidyProxy)} starting");
             _client = httpClientFactory.CreateClient();
-            _mopidyWebSocketEndpoint = Configuration["Mopidy:WebSocketEndpoint"] ?? throw new ApplicationException("Mopidy:WebSocketEndpoint not configured");
+            _mopidyWebSocketEndpoint = _configuration["Mopidy:WebSocketEndpoint"] ?? throw new ApplicationException("Mopidy:WebSocketEndpoint not configured");
             _mopidyNowPlayingState = MopidyNowPlayingState.Default;
-            _mopidyCaller = new MopidyCaller(httpClientFactory, Configuration, logger);
+            Rpc = new MopidyCaller(httpClientFactory, _configuration, logger);
 
             try
             {
@@ -81,19 +88,19 @@ namespace PiperPicker.Proxies
 
                     if (_mopidyNowPlayingState.IsPlaying)
                     {
-                        var trackTimePosition = await _mopidyCaller.GetTimePositionMs();
+                        var trackTimePosition = await Rpc.GetTimePositionMs();
                         _mopidyNowPlayingState = _mopidyNowPlayingState with { TrackPositionMs = trackTimePosition };
                         RaiseEvent(_mopidyNowPlayingState);
                     }
                 }
                 catch (OperationCanceledException)
                 {
-                    Logger.LogInformation($"Stopping {nameof(MonitorTrackTimePosition)}.");
+                    _logger.LogInformation($"Stopping {nameof(MonitorTrackTimePosition)}.");
                     break;
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Error processing time position message from mopidy.");
+                    _logger.LogError(ex, "Error processing time position message from mopidy.");
                 }
             }
         }
@@ -120,7 +127,7 @@ namespace PiperPicker.Proxies
                             var received = await cws.ReceiveAsync(buffer, cancellationToken);
                             if (received.EndOfMessage)
                             {
-                                messageJson = UTF8Encoding.UTF8.GetString(buffer);
+                                messageJson = Encoding.UTF8.GetString(buffer);
                                 if (messageJson.Contains('\0'))
                                 {
                                     messageJson = messageJson.Substring(0, messageJson.IndexOf('\0'));
@@ -177,7 +184,7 @@ namespace PiperPicker.Proxies
                             }
                             else
                             {
-                                Logger.LogError(ex, $"Error processing websocket message from mopidy: '{messageJson}'");
+                                _logger.LogError(ex, $"Error processing websocket message from mopidy: '{messageJson}'");
                             }
 
                             await Task.Delay(10000, cancellationToken);
@@ -186,12 +193,12 @@ namespace PiperPicker.Proxies
                 }
                 catch (OperationCanceledException)
                 {
-                    Logger.LogInformation($"Stopping {nameof(MonitorWebSocket)}.");
+                    _logger.LogInformation($"Stopping {nameof(MonitorWebSocket)}.");
                     break;
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, "Error in websocket communication with mopidy");
+                    _logger.LogError(ex, "Error in websocket communication with mopidy");
                     await Task.Delay(10000, cancellationToken);
                 }
             }
@@ -229,9 +236,9 @@ namespace PiperPicker.Proxies
         {
             try
             {
-                var currentTrackResponseTask = _mopidyCaller.GetCurrentTrack();
-                var stateResponseTask = _mopidyCaller.GetState();
-                var trackPositionTask = _mopidyCaller.GetTimePositionMs();
+                var currentTrackResponseTask = Rpc.GetCurrentTrack();
+                var stateResponseTask = Rpc.GetState();
+                var trackPositionTask = Rpc.GetTimePositionMs();
                 var nowPlaying = await currentTrackResponseTask;
                 var state = await stateResponseTask;
                 var trackPosition = await trackPositionTask;
@@ -242,7 +249,7 @@ namespace PiperPicker.Proxies
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error in GetNowPlaying");
+                _logger.LogError(ex, "Error in GetNowPlaying");
                 return MopidyNowPlayingState.Default;
             }
         }
@@ -277,14 +284,14 @@ namespace PiperPicker.Proxies
 
         private async Task MonitorEpisodeListPath(CancellationToken cancellationToken)
         {
-            var directoryToMonitor = Configuration["Mopidy:EpisodeList:Path"];
+            var directoryToMonitor = _configuration["Mopidy:EpisodeList:Path"];
             if (directoryToMonitor == null || !Directory.Exists(directoryToMonitor))
             {
-                Logger.LogError($"Cannot monitor directory '{directoryToMonitor}' because it does not exist.");
+                _logger.LogError($"Cannot monitor directory '{directoryToMonitor}' because it does not exist.");
                 return;
             }
 
-            Logger.LogInformation($"Started directory monitor on '{directoryToMonitor}'.");
+            _logger.LogInformation($"Started directory monitor on '{directoryToMonitor}'.");
 
             // Does the episode list from Mopidy match what was found looking
             // at the directory directly? If not Mopidy should catch up soon so 
@@ -313,14 +320,14 @@ namespace PiperPicker.Proxies
 
                     if (shouldGetEpisodesFromMopidy)
                     {
-                        var mopidyEpisodes = await _mopidyCaller.GetEpisodes();
+                        var mopidyEpisodes = await Rpc.GetEpisodes();
                         mopidyLastSyncUtc = DateTime.UtcNow;
 
                         mopidyEpisodeCountOutOfSync = mopidyEpisodes.Count != currentFilesInDirectory.Count;
                         if (mopidyEpisodeCountOutOfSync)
-                            Logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}. Mopidy {mopidyEpisodes.Count} episodes. Directory {currentFilesInDirectory.Count} files.");
+                            _logger.LogWarning($"Mopidy episode count is out of sync with M4A file count in {nameof(MonitorEpisodeListPath)}. Mopidy {mopidyEpisodes.Count} episodes. Directory {currentFilesInDirectory.Count} files.");
 
-                        Logger.LogInformation("Raising episode list event.");
+                        _logger.LogInformation("Raising episode list event.");
                         RaiseEpisodeListEvent_WithDebounce(mopidyEpisodes);
                     }
 
@@ -332,7 +339,7 @@ namespace PiperPicker.Proxies
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogError(ex, $"Error {nameof(MonitorEpisodeListPath)} in polling loop.");
+                    _logger.LogError(ex, $"Error {nameof(MonitorEpisodeListPath)} in polling loop.");
                     await Task.Delay(longLoopDelayMs, cancellationToken);
                 }
             }
@@ -363,170 +370,6 @@ namespace PiperPicker.Proxies
             }
         }
 
-        public class MopidyCaller
-        {
-            private IConfiguration Configuration;
-            private ILogger _logger;
-            private HttpClient _client;
-            private string _mopidyEndpoint;
-            private Random _random = new Random();
-
-            public MopidyCaller(IHttpClientFactory httpClientFactory, IConfiguration configuration, ILogger logger)
-            {
-                Configuration = configuration;
-                _logger = logger;
-                
-                _client = httpClientFactory.CreateClient();
-                _client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36");
-
-                _mopidyEndpoint = Configuration["Mopidy:Endpoint"] ?? throw new ApplicationException("Mopidy:Endpoint not configured");
-            }
-
-            public async Task PlayRandomEpisode()
-            {
-                var episodes = await GetEpisodes();
-                var randomEpisode = episodes.ElementAt(_random.Next(0, episodes.Count()));
-                await PlayEpisode(randomEpisode);
-            }
-
-            public async Task PlayEpisode(MopidyItem episode)
-            {
-                await ClearQueue();
-                await MopidyPost("core.tracklist.add", new string[] { episode.Uri });
-                await Play();
-            }
-
-            public async Task ClearQueue()
-            {
-                await MopidyPost("core.tracklist.clear");
-            }
-
-            public async Task Play()
-            {
-                await MopidyPost("core.playback.play");
-            }
-
-            public async Task Pause()
-            {
-                await MopidyPost("core.playback.pause");
-            }
-
-            public async Task<string> TogglePause()
-            {
-                var state = await GetState();
-                if (state.Result == "playing")
-                {
-                    await Pause();
-                    return "paused";
-                }
-                else
-                {
-                    await Play();
-                    return "playing";
-                }
-            }
-
-            public async Task SeekRelative(int seekMs)
-            {
-                var responseContent = await MopidyPost("core.playback.get_time_position");
-                var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(responseContent, _serialiserOptions);
-                if (timePositionResponse != null)
-                {
-                    var newPositionMs = timePositionResponse.Result + seekMs;
-                    await MopidyPost("core.playback.seek", seekPositionMs: newPositionMs);
-                }
-            }
-
-            public async Task<int> GetTimePositionMs()
-            {
-                try
-                {
-                    var timePositionResponseContent = await MopidyPost("core.playback.get_time_position");
-                    var timePositionResponse = JsonSerializer.Deserialize<TimePositionResponse>(timePositionResponseContent, _serialiserOptions);
-                    return timePositionResponse?.Result ?? -1;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error in GetTimePositionMs");
-                    return -1;
-                }
-            }
-
-            public async Task<StateDto> GetState()
-            {
-                var responseContent = await MopidyPost("core.playback.get_state");
-                return JsonSerializer.Deserialize<StateDto>(responseContent, _serialiserOptions) ?? new StateDto();
-            }
-
-            public async Task<NowPlayingResponse?> GetCurrentTrack()
-            {
-                var currentTrackResponse = await MopidyPost("core.playback.get_current_track");
-                var nowPlaying = JsonSerializer.Deserialize<NowPlayingResponse>(currentTrackResponse, _serialiserOptions);
-                return nowPlaying;
-            }
-
-            public async Task<IList<MopidyItem>> GetEpisodes()
-            {
-                var pathInMopidyFormat = $"file:///{Configuration["Mopidy:EpisodeList:Path"]}";
-                await MopidyPost("core.library.refresh", pathInMopidyFormat);
-                var responseContent = await MopidyPost("core.library.browse", pathInMopidyFormat);
-                var mopidyItems = JsonSerializer.Deserialize<MopidyItems>(responseContent, _serialiserOptions);
-
-                if (mopidyItems == null)
-                {
-                    _logger.LogError($"Deserialising response from Mopidy core.library.browse gave null result.");
-                    return new List<MopidyItem>();
-                }
-
-                return mopidyItems.Result;
-            }
-
-            private async Task<string> MopidyPost(string method, string[] targetUris)
-            {
-                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", \"params\":{{\"uris\":{JsonSerializer.Serialize(targetUris, _serialiserOptions)}}} }}";
-                var content = new StringContent(requestContent);
-                content.Headers.Clear();
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                var response = await _client.PostAsync($"{_mopidyEndpoint}", content);
-                var responseContent = await response.Content.ReadAsStringAsync();
-                return responseContent;
-            }
-
-            private async Task<string> MopidyPost(string method)
-            {
-                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\" }}";
-                return await MopidyPostActual(requestContent);
-            }
-
-            private async Task<string> MopidyPost(string method, string targetUri)
-            {
-                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"uri\":\"{targetUri}\"}}"} }}";
-                return await MopidyPostActual(requestContent);
-            }
-
-            private async Task<string> MopidyPost(string method, int seekPositionMs)
-            {
-                var requestContent = $"{{\"jsonrpc\": \"2.0\", \"id\": 1, \"method\": \"{method}\", {$"\"params\":{{\"time_position\":{seekPositionMs}}}"} }}";
-                return await MopidyPostActual(requestContent);
-            }
-
-            private async Task<string> MopidyPostActual(string requestContent)
-            {
-                var content = new StringContent(requestContent);
-                content.Headers.Clear();
-                content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-                var response = await _client.PostAsync($"{_mopidyEndpoint}", content);
-                var responseContent = await response.Content.ReadAsStringAsync();
-                return responseContent;
-            }
-
-            private JsonSerializerOptions _serialiserOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            };
-        }
-
-
         private void RaiseEvent(MopidyNowPlayingState mopidyNowPlayingState)
         {
             OnMopidyNotification?.Invoke(null!, new MopidyNotificationEventArgs(mopidyNowPlayingState));
@@ -546,12 +389,12 @@ namespace PiperPicker.Proxies
                 {
                     try
                     {
-                        Logger.LogInformation("Debounce timer fired, raising episode list event");
+                        _logger.LogInformation("Debounce timer fired, raising episode list event");
                         OnMopidyEpisodeListNotification?.Invoke(null!, new MopidyEpisodeListNotificationEventArgs(episodes));
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogError(ex, "Error during debounced RaiseEpisodeListEvent");
+                        _logger.LogError(ex, "Error during debounced RaiseEpisodeListEvent");
                     }
                 }, null, DebounceDelay, Timeout.InfiniteTimeSpan);
             }

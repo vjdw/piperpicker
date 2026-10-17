@@ -86,17 +86,17 @@
 
     private async void PauseButtonClickHandler()
     {
-        await MopidyProxy._mopidyCaller.TogglePause();
+        await MopidyProxy.Rpc.TogglePause();
     }
 
     private async void SeekBackButtonClickHandler()
     {
-        await MopidyProxy._mopidyCaller.SeekRelative(-20000);
+        await MopidyProxy.Rpc.SeekRelative(-20000);
     }
 
     private async void SeekForwardButtonClickHandler()
     {
-        await MopidyProxy._mopidyCaller.SeekRelative(10000);
+        await MopidyProxy.Rpc.SeekRelative(10000);
     }
 
     private string BuildTrackProgressPercent()

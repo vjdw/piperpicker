@@ -38,12 +38,12 @@ public partial class MopidyProxy
             }
             catch (OperationCanceledException)
             {
-                Logger.LogInformation($"Stopping {nameof(MonitorBbcTrackInformationTask)}.");
+                _logger.LogInformation($"Stopping {nameof(MonitorBbcTrackInformationTask)}.");
                 break;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error processing BBC Track Information.");
+                _logger.LogError(ex, "Error processing BBC Track Information.");
             }
         }
     }
@@ -57,7 +57,7 @@ public partial class MopidyProxy
             var bbcNowPlaying = await _client.GetFromJsonAsync<BbcNowPlaying>(bbcNowPlayingUrl, cancellationToken);
             bbcTrackTitles = bbcNowPlaying?.Data.FirstOrDefault()?.Titles;
             if (bbcTrackTitles == null)
-                Logger.LogWarning($"No BBC radio track titles found for '{bbcNowPlayingUrl}'");
+                _logger.LogWarning($"No BBC radio track titles found for '{bbcNowPlayingUrl}'");
         }
 
         return _mopidyNowPlayingState with

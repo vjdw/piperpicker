@@ -124,11 +124,11 @@
     {
         if (MopidyItem.Name == EpisodeSelector.RandomRadmacIdentifier)
         {
-            await MopidyProxy._mopidyCaller.PlayRandomEpisode();
+            await MopidyProxy.Rpc.PlayRandomEpisode();
         }
         else
         {
-            await MopidyProxy._mopidyCaller.PlayEpisode(MopidyItem);
+            await MopidyProxy.Rpc.PlayEpisode(MopidyItem);
         }
     }
 }
