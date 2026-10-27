@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using PiperPicker.Models;
@@ -20,8 +21,8 @@ public class StreamController(FfmpegStreamService ffmpeg, IOptions<RadioSelector
         
         ffmpeg.Start(stationId, streamMopidyItem.ExternalUri);
         
-        var source = ffmpeg.TryAttach(stationId, requestAborted, out var token);
-        if (source is null)
+        var subscription = ffmpeg.TrySubscribe(stationId);
+        if (subscription is null)
         {
             Response.StatusCode = StatusCodes.Status404NotFound;
             return;
@@ -29,12 +30,19 @@ public class StreamController(FfmpegStreamService ffmpeg, IOptions<RadioSelector
 
         Response.ContentType = "audio/aac";
         Response.Headers.CacheControl = "no-store";
+        HttpContext.Features.Get<IHttpResponseBodyFeature>()?.DisableBuffering();
 
+        var (backlog, live, unsubscribe) = subscription.Value;
         try
         {
-            await source.CopyToAsync(Response.Body, token);
+            foreach (var chunk in backlog)
+                await Response.Body.WriteAsync(chunk, requestAborted);
+
+            await foreach (var chunk in live.ReadAllAsync(requestAborted))
+                await Response.Body.WriteAsync(chunk, requestAborted);
         }
         catch (OperationCanceledException) { }
         catch (IOException) { }
+        finally { unsubscribe(); }
     }
 }
