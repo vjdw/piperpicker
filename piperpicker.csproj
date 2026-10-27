@@ -77,4 +77,8 @@
     <Folder Include="wwwroot\fonts\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.App.Internal.Assets" Version="10.0.14" />
+  </ItemGroup>
+
 </Project>

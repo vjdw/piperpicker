@@ -2,15 +2,17 @@
     const maximumRetryCount = 10;
     const retryIntervalMilliseconds = 1000;
     const reconnectModal = document.getElementById('reconnect-modal');
-
+    const showModal = (text) => { if (reconnectModal) { reconnectModal.style.display = 'block'; if (text) reconnectModal.innerText = text; } };
+    const hideModal = () => { if (reconnectModal) reconnectModal.style.display = 'none'; };
+    
     const startReconnectionProcess = () => {
-        reconnectModal.style.display = 'block';
+        showModal("Reconnecting...");
 
         let isCanceled = false;
 
         (async () => {
             for (let i = 0; i < maximumRetryCount; i++) {
-                reconnectModal.innerText = `Reconnecting${'.'.repeat(i)}`;
+                showModal(`Reconnecting${'.'.repeat(i)}`);
 
                 await new Promise(resolve => setTimeout(resolve, retryIntervalMilliseconds));
 
@@ -40,7 +42,7 @@
         return {
             cancel: () => {
                 isCanceled = true;
-                reconnectModal.style.display = 'none';
+                hideModal();
             },
         };
     };
