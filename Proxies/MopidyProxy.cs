@@ -424,7 +424,7 @@ namespace PiperPicker.Proxies
             IEnumerable<string> FilesInDirectory(string directory)
             {
                 var current = Directory
-                    .EnumerateFiles(directory, "*", SearchOption.AllDirectories);
+                    .EnumerateFiles(directory, "*.m4a", SearchOption.AllDirectories);
 
                 // Mopidy GetEpisodes appears to return all files so I don't need this filter. 
                 // .Where(f =>
